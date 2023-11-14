@@ -1,0 +1,34 @@
+service: lambdas-serverless
+
+frameworkVersion: '3'
+
+configValidationMode: error
+
+provider:
+  name: aws
+  region: ${env:AWS_REGION, 'us-west-2'}
+  runtime: nodejs18.x
+  logRetentionInDays: 90
+  deploymentMethod: changesets
+  stackTags:
+    service: api
+    environment: prod
+
+plugins:
+  - serverless-better-credentials
+
+functions:
+  users-serverless:
+    handler: handler.handler
+    memorySize: 128
+    timeout: 5
+    package:
+      artifact: dist/users/users.zip
+      individually: true
+  products-serverless:
+    handler: handler.handler
+    memorySize: 128
+    timeout: 5
+    package:
+      artifact: dist/products/products.zip
+      individually: true

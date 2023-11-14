@@ -1,0 +1,10 @@
+*.js
+!jest.config.js
+!.jest/setEnvVars.js
+!scripts/*.sh
+*.d.ts
+node_modules
+.idea
+dist/
+.serverless/
+
