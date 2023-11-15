@@ -1,35 +1,135 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useEffect, useRef, useState } from "react";
+import {
+  type ChatMessageEvent,
+  clearCurrentClient,
+  sendMessage,
+  subscribeToTopic,
+} from "./utils/momento-web";
+import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
+import {TranslationApi} from "../api/translation";
 
-function App() {
-  const [count, setCount] = useState(0)
+const ChatApp: React.FC = () => {
+  const cacheName = "chat-app-cache";
+  const topicName = "chat-publish";
+  const username = "user";
+  const [chats, setChats] = useState<ChatMessageEvent[]>([]);
+  const [textInput, setTextInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const translationApi = new TranslationApi();
+
+  const availableLanguages = [
+    { value: "en", label: "🇺🇸 English" },
+    { value: "es", label: "🇪🇸 Español" },
+  ];
+
+  const onItem = (item: TopicItem) => {
+    try {
+      const message = JSON.parse(item.valueString()) as ChatMessageEvent;
+      // translate the messages here
+      const translatedMessage = translationApi.getTranslatedMessage(message.payload);
+      setChats((curr) => [...curr, message]);
+    } catch (e) {
+      console.error("unable to parse chat message", e);
+    }
+  };
+
+  const onError = async (
+    error: TopicSubscribe.Error,
+    sub: TopicSubscribe.Subscription,
+  ) => {
+    console.error(
+      "received error from momento, getting new token and resubscribing",
+      error,
+    );
+    sub.unsubscribe();
+    clearCurrentClient();
+    await subscribeToTopic(cacheName, topicName, onItem, onError);
+  };
+
+  const onSendMessage = async () => {
+    await sendMessage(cacheName, topicName, username, {
+      message: textInput,
+      targetLanguage: selectedLanguage,
+    });
+    setTextInput("");
+  };
+
+  const onEnterClicked = async (e: { keyCode: number }) => {
+    if (e.keyCode === 13 && textInput) {
+      await onSendMessage();
+    }
+  };
+
+  useEffect(() => {
+    subscribeToTopic(cacheName, topicName, onItem, onError)
+      .then(() => {
+        console.log("successfully subscribed");
+      })
+      .catch((e) => console.error("error subscribing to topic", e));
+  }, []);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chats]);
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="flex h-screen flex-col bg-gradient-to-b from-gray-800 to-black text-white">
+      <div className="flex flex-none items-center justify-between bg-gray-900 p-4">
+        <h1 className="text-3xl font-bold">Welcome to the Chat App</h1>
+        <div className="flex items-center">
+          <select
+            className="border-none bg-transparent focus:outline-none"
+            value={selectedLanguage}
+            onChange={(e) => setSelectedLanguage(e.target.value)}
+          >
+            {availableLanguages.map((language) => (
+              <option key={language.value} value={language.value}>
+                {language.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+      <div className="flex-1 overflow-y-scroll p-4">
+        {chats.map((chat, index) => (
+          <div
+            key={index}
+            className={`mb-2 p-2 ${
+              chat.username === "moderator" ? "bg-blue-500" : "bg-green-500"
+            } animate__animated animate__fadeIn rounded-md`}
+          >
+            <div className="mb-1 text-sm text-gray-700">
+              {chat.username} - {new Date(chat.timestamp).toLocaleTimeString()}
+            </div>
+            <div className="text-white">{chat.payload.message}</div>
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+      <div className="flex items-center bg-gray-700 p-4">
+        <input
+          type="text"
+          placeholder="Type your message..."
+          value={textInput}
+          onKeyDown={onEnterClicked}
+          onChange={(e) => setTextInput(e.target.value)}
+          className="mr-2 flex-1 rounded border border-gray-500 bg-gray-800 p-2 text-white focus:outline-none"
+        />
+        <button
+          onClick={onSendMessage}
+          disabled={!textInput}
+          className="rounded bg-pink-500 p-2 text-white transition duration-300 hover:bg-pink-600 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-500 disabled:brightness-75"
+        >
+          Send
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    </div>
+  );
+};
 
-export default App
+export default ChatApp;

@@ -5,6 +5,11 @@
 *.d.ts
 node_modules
 .idea
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+cdk.context.json
 dist/
-.serverless/
+*.db
 

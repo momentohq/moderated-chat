@@ -1,4 +1,4 @@
-service: lambdas-serverless
+service: translation-serverless
 
 frameworkVersion: '3'
 
@@ -30,5 +30,5 @@ functions:
     memorySize: 128
     timeout: 5
     package:
-      artifact: dist/products/products.zip
+      artifact: dist/translation/translation.zip
       individually: true

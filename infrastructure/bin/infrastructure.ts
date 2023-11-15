@@ -1,21 +1,47 @@
-#!/usr/bin/env node
-import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
-import { InfrastructureStack } from '../lib/infrastructure-stack';
+import {GetCallerIdentityCommand, STSClient} from '@aws-sdk/client-sts';
+import {TranslationApiStack} from "../lib/translation-api";
 
-const app = new cdk.App();
-new InfrastructureStack(app, 'InfrastructureStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
+async function main() {
+    const momentoOrgName = "preprod";
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+    const stsClient = new STSClient({});
+    const command = new GetCallerIdentityCommand({});
+    let stsResponse;
+    try {
+        stsResponse = await stsClient.send(command);
+    } catch (e) {
+        throw new Error(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            `Unable to load AWS account info; make sure you have set AWS_PROFILE or otherwise provided the appropriate credentials for the target cell account. ${e}`
+        );
+    }
 
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const callerAccountId = stsResponse.Account!;
+    const region = process.env.AWS_REGION;
+    if (!region) {
+        throw new Error('Missing required env var AWS_REGION');
+    }
 
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+    const stackEnv = {
+        account: callerAccountId,
+        region: region,
+    };
+
+    const app = new cdk.App();
+
+    new TranslationApiStack(
+        app,
+        `translation-api-stack-${momentoOrgName.toLowerCase()}`,
+        {
+            isDevDeploy: Boolean(process.env.IS_DEV_DEPLOY),
+            momentoSsoOrgName: momentoOrgName,
+        },
+        {env: stackEnv}
+    );
+}
+
+main().catch(e => {
+    throw e;
 });

@@ -32,7 +32,9 @@
   ],
   "include": [
     "src/**/*.ts",
-    "*.ts"
+    "src/*.ts",
+    "*.ts",
+    "src/common/**/*.ts",
   ],
 }
 
