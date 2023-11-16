@@ -3,24 +3,51 @@ import {IRoute} from '../../../common/routes/IRoute';
 import logger from "../../../common/logger";
 import {TranslateClient, TranslateTextCommand} from "@aws-sdk/client-translate";
 import {supportedLanguages} from "../../../common/utils";
-import {TopicClient, TopicPublish} from "@gomomento/sdk";
-import { filter } from 'curse-filter';
+import {
+    AllTopics,
+    AuthClient,
+    DisposableTokenScopes,
+    ExpiresIn, GenerateDisposableToken,
+    TopicClient,
+    TopicPublish
+} from "@gomomento/sdk";
+import {filter} from 'curse-filter';
 
 type Props = {
     translateClient: TranslateClient;
     topicClient: TopicClient;
+    authClient: AuthClient;
     cache: string;
     baseTopicName: string;
 }
 
-type TranslationRequest = {
+type ParsedMessage = {
     message: string;
     sourceLanguage: string;
+    timestamp: number;
+}
+
+type TranslationRequest = {
+    cache: string;
+    topic: string;
+    event_timestamp: number;
+    publish_timestamp: number;
+    topic_sequence_number: number;
+    token_id: string;
+    text: string;
+}
+
+type MessageToPublish = {
+    message: string;
+    sourceLanguage: string;
+    timestamp: number;
+    username: string;
 }
 
 export class TranslationRoute implements IRoute {
     private readonly translateClient: TranslateClient;
     private readonly topicClient: TopicClient;
+    public readonly authClient: AuthClient;
     private readonly cache: string;
     private readonly baseTopicName: string;
     constructor(props: Props) {
@@ -37,10 +64,11 @@ export class TranslationRoute implements IRoute {
                 })
                 const body = req.body as TranslationRequest;
                 // try and filter first. This filter does not filter from all languages, but its a good start
-                const filteredMessage = filter(body.message ?? '');
+                const parsedMessage = JSON.parse(body.text) as ParsedMessage;
+                const filteredMessage = filter(parsedMessage.message ?? '');
                 for (const lang of supportedLanguages) {
                     const translateReq = new TranslateTextCommand({
-                        SourceLanguageCode: body.sourceLanguage,
+                        SourceLanguageCode: parsedMessage.sourceLanguage,
                         TargetLanguageCode: lang,
                         Text: filteredMessage,
                         Settings: {
@@ -48,7 +76,7 @@ export class TranslationRoute implements IRoute {
                         }
                     });
                     logger.info('translating', {
-                        source: body.sourceLanguage,
+                        source: parsedMessage.sourceLanguage,
                         target: lang,
                     });
                     const translateResp = await this.translateClient.send(translateReq);
@@ -59,10 +87,17 @@ export class TranslationRoute implements IRoute {
                         translatedText: translateResp.TranslatedText,
                     });
                     const topicName = this.generateTopicName(lang);
+                    const messageToSend: MessageToPublish = {
+                        timestamp: parsedMessage.timestamp,
+                        message: translateResp.TranslatedText ?? '',
+                        sourceLanguage: lang,
+                        username: body.token_id,
+                    }
                     logger.info('publishing translated text to topic', {
-                        topic: topicName
+                        topic: topicName,
+                        messageToSend,
                     });
-                    const publishResp = await this.topicClient.publish(this.cache, topicName, translateResp.TranslatedText ?? '');
+                    const publishResp = await this.topicClient.publish(this.cache, topicName, JSON.stringify(messageToSend));
                     if (publishResp instanceof TopicPublish.Success) {
                         logger.info('successfully published translated text', {
                             topic: topicName,
@@ -83,6 +118,30 @@ export class TranslationRoute implements IRoute {
                     supportedLanguages
                 });
                 return res.status(200).send({ supportedLanguages });
+            });
+            api.get('token/:username', async (req: Request, res: Response) => {
+                if (!(req.pathParameters && req.pathParameters.username)) {
+                    return res.status(400).send({ message: 'missing required path param "username"'});
+                }
+                logger.info('received request to get token for chat', {
+                    username: req.pathParameters.username
+                });
+                const publishOnlyScope = DisposableTokenScopes.topicPublishOnly(this.cache, "chat-publish");
+                const subscribeOnlyScope = DisposableTokenScopes.topicSubscribeOnly(this.cache, AllTopics);
+                const scopes = [publishOnlyScope, subscribeOnlyScope];
+                const disposableTokenResp = await this.authClient.generateDisposableToken(scopes, ExpiresIn.minutes(5), { tokenId: req.pathParameters.username });
+                if (disposableTokenResp instanceof GenerateDisposableToken.Success) {
+                    return res.status(200).send({ token: disposableTokenResp.authToken, expiresAtEpoch: disposableTokenResp.expiresAt.epoch() });
+                } else if (disposableTokenResp instanceof GenerateDisposableToken.Error) {
+                    logger.error('failed to generate disposable token', {
+                        code: disposableTokenResp.errorCode(),
+                        message: disposableTokenResp.message(),
+                        exception: disposableTokenResp.innerException(),
+                    });
+                    return res.status(500).send({ message: "unable to create token" });
+                }
+                logger.error('unknown error occured when generating a disposable token', { resp: disposableTokenResp });
+                return res.status(500).send({ message: 'unknown error occured when generating a disposable token' });
             })
         };
     }
