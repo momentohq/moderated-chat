@@ -1,22 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   type ChatMessageEvent,
-  clearCurrentClient,
   sendMessage,
+  setUsername,
   subscribeToTopic,
 } from "./utils/momento-web";
 import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
-import {TranslationApi} from "../api/translation";
 
 const ChatApp: React.FC = () => {
-  const cacheName = "chat-app-cache";
-  const topicName = "chat-publish";
   const username = "user";
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
   const [textInput, setTextInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
-  const translationApi = new TranslationApi();
 
   const availableLanguages = [
     { value: "en", label: "🇺🇸 English" },
@@ -25,9 +21,9 @@ const ChatApp: React.FC = () => {
 
   const onItem = (item: TopicItem) => {
     try {
+      console.log("test", item.valueString());
+      console.log(`listening to: ${selectedLanguage}`);
       const message = JSON.parse(item.valueString()) as ChatMessageEvent;
-      // translate the messages here
-      const translatedMessage = translationApi.getTranslatedMessage(message.payload);
       setChats((curr) => [...curr, message]);
     } catch (e) {
       console.error("unable to parse chat message", e);
@@ -36,21 +32,20 @@ const ChatApp: React.FC = () => {
 
   const onError = async (
     error: TopicSubscribe.Error,
-    sub: TopicSubscribe.Subscription,
+    _sub: TopicSubscribe.Subscription,
   ) => {
     console.error(
       "received error from momento, getting new token and resubscribing",
       error,
     );
-    sub.unsubscribe();
-    clearCurrentClient();
-    await subscribeToTopic(cacheName, topicName, onItem, onError);
+    await subscribeToTopic(selectedLanguage, onItem, onError);
   };
 
   const onSendMessage = async () => {
-    await sendMessage(cacheName, topicName, username, {
+    await sendMessage({
+      username,
       message: textInput,
-      targetLanguage: selectedLanguage,
+      sourceLanguage: selectedLanguage,
     });
     setTextInput("");
   };
@@ -62,16 +57,20 @@ const ChatApp: React.FC = () => {
   };
 
   useEffect(() => {
-    subscribeToTopic(cacheName, topicName, onItem, onError)
+    subscribeToTopic(selectedLanguage, onItem, onError)
       .then(() => {
         console.log("successfully subscribed");
       })
       .catch((e) => console.error("error subscribing to topic", e));
-  }, []);
+  }, [selectedLanguage]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    setUsername(username);
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -106,7 +105,7 @@ const ChatApp: React.FC = () => {
             <div className="mb-1 text-sm text-gray-700">
               {chat.username} - {new Date(chat.timestamp).toLocaleTimeString()}
             </div>
-            <div className="text-white">{chat.payload.message}</div>
+            <div className="text-white">{chat.message}</div>
           </div>
         ))}
         <div ref={messagesEndRef} />
