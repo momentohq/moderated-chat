@@ -21,7 +21,11 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@aws-sdk/client-translate": "3.451.0",
+    "@aws-sdk/client-secrets-manager": "3.451.0",
+    "@gomomento/sdk": "1.51.1",
     "aws-lambda": "^1.0.7",
+    "curse-filter": "^5.2.4",
     "lambda-api": "^1.0.3",
     "lambda-log": "^3.1.0"
   }

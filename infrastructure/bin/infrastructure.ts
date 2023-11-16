@@ -3,8 +3,6 @@ import {GetCallerIdentityCommand, STSClient} from '@aws-sdk/client-sts';
 import {TranslationApiStack} from "../lib/translation-api";
 
 async function main() {
-    const momentoOrgName = "preprod";
-
     const stsClient = new STSClient({});
     const command = new GetCallerIdentityCommand({});
     let stsResponse;
@@ -33,10 +31,9 @@ async function main() {
 
     new TranslationApiStack(
         app,
-        `translation-api-stack-${momentoOrgName.toLowerCase()}`,
+        `translation-api-stack-preprod`,
         {
             isDevDeploy: Boolean(process.env.IS_DEV_DEPLOY),
-            momentoSsoOrgName: momentoOrgName,
         },
         {env: stackEnv}
     );
