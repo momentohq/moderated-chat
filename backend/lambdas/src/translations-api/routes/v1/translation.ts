@@ -55,6 +55,7 @@ export class TranslationRoute implements IRoute {
         this.topicClient = props.topicClient;
         this.cache = props.cache;
         this.baseTopicName = props.baseTopicName;
+        this.authClient = props.authClient;
     }
     routes(): (api: API) => void {
         return (api: API): void => {
@@ -120,16 +121,14 @@ export class TranslationRoute implements IRoute {
                 return res.status(200).send({ supportedLanguages });
             });
             api.get('token/:username', async (req: Request, res: Response) => {
-                if (!(req.pathParameters && req.pathParameters.username)) {
+                if (!(req.params && req.params.username)) {
                     return res.status(400).send({ message: 'missing required path param "username"'});
                 }
                 logger.info('received request to get token for chat', {
-                    username: req.pathParameters.username
+                    username: req.params.username
                 });
-                const publishOnlyScope = DisposableTokenScopes.topicPublishOnly(this.cache, "chat-publish");
-                const subscribeOnlyScope = DisposableTokenScopes.topicSubscribeOnly(this.cache, AllTopics);
-                const scopes = [publishOnlyScope, subscribeOnlyScope];
-                const disposableTokenResp = await this.authClient.generateDisposableToken(scopes, ExpiresIn.minutes(5), { tokenId: req.pathParameters.username });
+                const subscribeOnlyScope = DisposableTokenScopes.topicPublishSubscribe(this.cache, AllTopics);
+                const disposableTokenResp = await this.authClient.generateDisposableToken(subscribeOnlyScope, ExpiresIn.minutes(5), { tokenId: req.params.username });
                 if (disposableTokenResp instanceof GenerateDisposableToken.Success) {
                     return res.status(200).send({ token: disposableTokenResp.authToken, expiresAtEpoch: disposableTokenResp.expiresAt.epoch() });
                 } else if (disposableTokenResp instanceof GenerateDisposableToken.Error) {

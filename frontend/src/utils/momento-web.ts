@@ -18,7 +18,7 @@ export type ChatMessageEvent = {
 
 let webTopicClient: TopicClient | undefined = undefined;
 let subscription: TopicSubscribe.Subscription | undefined = undefined;
-let username = "";
+let username = "user";
 let onItemCb: (item: TopicItem) => void;
 let onErrorCb: (
   error: TopicSubscribe.Error,
