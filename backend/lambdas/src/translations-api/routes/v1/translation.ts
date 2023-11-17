@@ -135,7 +135,7 @@ export class TranslationRoute implements IRoute {
                 } else if (listResp instanceof CacheListFetch.Miss) {
                     return res.status(200).send({ messages: [] });
                 } else if (listResp instanceof CacheListFetch.Error) {
-                    logger.error('failed to fetch preivous message, returning empty list', {
+                    logger.error('failed to fetch previous message, returning empty list', {
                         message: listResp.message(),
                         core: listResp.errorCode(),
                         exception: listResp.innerException(),
