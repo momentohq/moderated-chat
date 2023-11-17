@@ -35,9 +35,9 @@ const App: React.FC = () => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             className="mb-4 w-full border p-2"
+            onKeyDown={handleKeyDown}
           />
           <button
-            onKeyDown={handleKeyDown}
             onClick={handleUsernameInput}
             className="rounded bg-pink-500 p-2 text-white transition duration-300 hover:bg-pink-600 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-500 disabled:brightness-75"
           >
