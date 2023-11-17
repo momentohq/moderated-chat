@@ -74,7 +74,7 @@ export class TranslationApiStack extends cdk.Stack {
         // provide access to our lambda to translate text
         v1TranslationApi.addToRolePolicy(new PolicyStatement({
             resources: ['*'],
-            actions: ['translate:TranslateText'],
+            actions: ['translate:TranslateText', 'comprehend:DetectDominantLanguage'],
             effect: Effect.ALLOW
         }));
         const translationSecrets = secrets.Secret.fromSecretNameV2(

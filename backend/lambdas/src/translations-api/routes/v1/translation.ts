@@ -69,7 +69,7 @@ export class TranslationRoute implements IRoute {
                 const filteredMessage = filter(parsedMessage.message ?? '');
                 for (const lang of supportedLanguages) {
                     const translateReq = new TranslateTextCommand({
-                        SourceLanguageCode: parsedMessage.sourceLanguage,
+                        SourceLanguageCode: 'auto',
                         TargetLanguageCode: lang,
                         Text: filteredMessage,
                         Settings: {
