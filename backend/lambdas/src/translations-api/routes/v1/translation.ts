@@ -5,7 +5,7 @@ import {TranslateClient, TranslateTextCommand} from "@aws-sdk/client-translate";
 import {supportedLanguages} from "../../../common/utils";
 import {
     AllTopics,
-    AuthClient,
+    AuthClient, CacheClient, CacheListFetch, CollectionTtl,
     DisposableTokenScopes,
     ExpiresIn, GenerateDisposableToken,
     TopicClient,
@@ -16,6 +16,7 @@ import {filter} from 'curse-filter';
 type Props = {
     translateClient: TranslateClient;
     topicClient: TopicClient;
+    cacheClient: CacheClient;
     authClient: AuthClient;
     cache: string;
     baseTopicName: string;
@@ -47,7 +48,8 @@ type MessageToPublish = {
 export class TranslationRoute implements IRoute {
     private readonly translateClient: TranslateClient;
     private readonly topicClient: TopicClient;
-    public readonly authClient: AuthClient;
+    private readonly authClient: AuthClient;
+    private readonly cacheClient: CacheClient;
     private readonly cache: string;
     private readonly baseTopicName: string;
     constructor(props: Props) {
@@ -56,6 +58,7 @@ export class TranslationRoute implements IRoute {
         this.cache = props.cache;
         this.baseTopicName = props.baseTopicName;
         this.authClient = props.authClient;
+        this.cacheClient = props.cacheClient;
     }
     routes(): (api: API) => void {
         return (api: API): void => {
@@ -110,9 +113,36 @@ export class TranslationRoute implements IRoute {
                             exception: publishResp.innerException()
                         });
                     }
+                    const fourHoursInSeconds = 4 * 60 * 60;
+                    await this.cacheClient.listPushFront(this.cache, lang, JSON.stringify(messageToSend), {
+                        truncateBackToSize: 100,
+                        ttl: CollectionTtl.refreshTtlIfProvided(fourHoursInSeconds)
+                    });
                 }
 
                 return res.status(200).send({ message: 'success' });
+            });
+            api.get('latestMessages/:language', async (req: Request, res: Response) => {
+                if (!(req.params && req.params.language)) {
+                    return res.status(400).send({ message: 'missing required path param "language"'});
+                };
+                const listResp = await this.cacheClient.listFetch(this.cache, req.params.language);
+                if (listResp instanceof CacheListFetch.Hit) {
+                    const publishedMessages = listResp.valueListString().map(item => {
+                        return JSON.parse(item) as MessageToPublish
+                    });
+                    return res.status(200).send({ messages: publishedMessages });
+                } else if (listResp instanceof CacheListFetch.Miss) {
+                    return res.status(200).send({ messages: [] });
+                } else if (listResp instanceof CacheListFetch.Error) {
+                    logger.error('failed to fetch preivous message, returning empty list', {
+                        message: listResp.message(),
+                        core: listResp.errorCode(),
+                        exception: listResp.innerException(),
+                    })
+                    return res.status(200).send({ messages: [] });
+                }
+                return res.status(500).send('failed to fetch previous messages');
             });
             api.get('languages', (req: Request, res: Response) => {
                 logger.info('received request to get supported languages', {

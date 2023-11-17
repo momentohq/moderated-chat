@@ -4,7 +4,14 @@ import { TranslateClient } from "@aws-sdk/client-translate";
 import {GetSecretValueCommand, SecretsManagerClient} from "@aws-sdk/client-secrets-manager";
 import log, {initLogger} from '../common/logger';
 import {TranslationRoute} from "./routes/v1/translation";
-import {AuthClient, CredentialProvider, TopicClient, TopicConfigurations} from "@gomomento/sdk";
+import {
+    AuthClient,
+    CacheClient,
+    CacheConfiguration, Configurations,
+    CredentialProvider,
+    TopicClient,
+    TopicConfigurations
+} from "@gomomento/sdk";
 
 const cacheName = process.env.MOMENTO_CACHE_NAME;
 if (!cacheName) {
@@ -49,6 +56,13 @@ export const createTranslationsApi = async (
             apiKey: parsedSecret.momentoApiKey
         })
     });
+    const cacheClient = new CacheClient({
+        credentialProvider: CredentialProvider.fromString({
+            apiKey: parsedSecret.momentoApiKey
+        }),
+        configuration: Configurations.Lambda.latest(),
+        defaultTtlSeconds: 60 * 60
+    });
 
     api.use((req: Request, res: Response, next: NextFunction) => {
         res.cors({});
@@ -74,6 +88,7 @@ export const createTranslationsApi = async (
         baseTopicName: 'chat',
         cache: cacheName,
         authClient,
+        cacheClient,
     });
     api.register(translationRoute.routes(), {
         prefix: '/v1/translate',
