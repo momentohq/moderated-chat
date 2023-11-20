@@ -5,12 +5,10 @@ import momentoLogo from "./assets/MomentoLogo.svg";
 
 const App: React.FC = () => {
   const [inputValue, setInputValue] = useState(localStorage.getItem("username"));
-  const [isUsernameSet, setIsUsernameSet] = useState(!!storedUserName);
 
   const handleUsernameInput = () => {
     if (inputValue.trim()) {
       setUsername(inputValue);
-      setIsUsernameSet(true);
       localStorage.setItem("username", inputValue);
     }
   };
@@ -21,7 +19,7 @@ const App: React.FC = () => {
     }
   };
 
-  return !isUsernameSet ? (
+  return !username ? (
     <div className="flex h-screen items-center justify-center bg-gradient-to-r from-gray-800 to-gray-700">
       <div>
         <img src={momentoLogo} className="h-32 w-80" alt="Momento logo" />
