@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { type ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   type ChatMessageEvent,
   sendMessage,
@@ -7,11 +7,20 @@ import {
 import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
 import translation from "./api/translation";
 
+export interface LanguageOption {
+  value: string;
+  label: string;
+}
 const ChatApp = (props: { username: string }) => {
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
   const [textInput, setTextInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+    localStorage.getItem("selectedLanguage") || "en",
+  );
+  const [availableLanguages, setAvailableLanguages] = useState<
+    LanguageOption[]
+  >([]);
 
   const fetchLatestChats = () => {
     translation
@@ -22,14 +31,26 @@ const ChatApp = (props: { username: string }) => {
       .catch((e) => console.error("error fetching latest chats", e));
   };
 
+  const fetchSupportedLanguages = () => {
+    translation
+      .getSupportedLanguages()
+      .then((response) => {
+        const supportedLanguages = response.supportedLanguages;
+        setAvailableLanguages(supportedLanguages);
+      })
+      .catch((e) => console.error("error fetching supported languages", e));
+  };
+
   useEffect(() => {
+    void fetchSupportedLanguages();
     void fetchLatestChats();
   }, []);
 
-  const availableLanguages = [
-    { value: "en", label: "🇺🇸 English" },
-    { value: "es", label: "🇪🇸 Español" },
-  ];
+  const handleLanguageSelect = (e: ChangeEvent<HTMLSelectElement>) => {
+    const selectedValue = e.target.value;
+    localStorage.setItem("selectedLanguage", selectedValue);
+    setSelectedLanguage(selectedValue);
+  };
 
   const onItem = (item: TopicItem) => {
     try {
@@ -93,7 +114,7 @@ const ChatApp = (props: { username: string }) => {
           <select
             className="border-none bg-transparent focus:outline-none"
             value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value)}
+            onChange={handleLanguageSelect}
           >
             {availableLanguages.map((language) => (
               <option key={language.value} value={language.value}>
