@@ -9,7 +9,7 @@ const App: React.FC = () => {
   );
 
   const handleUsernameInput = () => {
-    if (inputValue.trim()) {
+    if (inputValue?.trim()) {
       setUsername(inputValue);
       localStorage.setItem("username", inputValue);
     }
@@ -31,7 +31,7 @@ const App: React.FC = () => {
           </label>
           <input
             type="text"
-            value={inputValue}
+            value={inputValue ?? ""}
             onChange={(e) => setInputValue(e.target.value)}
             className="mb-4 w-full border p-2"
             onKeyDown={handleKeyDown}
