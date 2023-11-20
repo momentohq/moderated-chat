@@ -161,8 +161,8 @@ export class TranslationRoute implements IRoute {
                 logger.info('received request to get token for chat', {
                     username: req.params.username
                 });
-                const subscribeOnlyScope = DisposableTokenScopes.topicPublishSubscribe(this.cache, AllTopics);
-                const disposableTokenResp = await this.authClient.generateDisposableToken(subscribeOnlyScope, ExpiresIn.minutes(5), { tokenId: req.params.username });
+                const publishSubscribeScope = DisposableTokenScopes.topicPublishSubscribe(this.cache, AllTopics);
+                const disposableTokenResp = await this.authClient.generateDisposableToken(publishSubscribeScope, ExpiresIn.minutes(5), { tokenId: req.params.username });
                 if (disposableTokenResp instanceof GenerateDisposableToken.Success) {
                     return res.status(200).send({ token: disposableTokenResp.authToken, expiresAtEpoch: disposableTokenResp.expiresAt.epoch() });
                 } else if (disposableTokenResp instanceof GenerateDisposableToken.Error) {
