@@ -4,12 +4,11 @@ import { setUsername, username } from "./utils/momento-web";
 import momentoLogo from "./assets/MomentoLogo.svg";
 
 const App: React.FC = () => {
-  const storedUserName = localStorage.getItem("username");
-  const [inputValue, setInputValue] = useState("");
-  const [isUsernameSet, setIsUsernameSet] = useState(storedUserName !== null);
+  const [inputValue, setInputValue] = useState(localStorage.getItem("username"));
+  const [isUsernameSet, setIsUsernameSet] = useState(!!storedUserName);
 
   const handleUsernameInput = () => {
-    if (inputValue.trim() !== "") {
+    if (inputValue.trim()) {
       setUsername(inputValue);
       setIsUsernameSet(true);
       localStorage.setItem("username", inputValue);
