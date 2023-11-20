@@ -22,21 +22,6 @@ const ChatApp = (props: { username: string }) => {
     LanguageOption[]
   >([]);
 
-  const getLabelForLanguage = (languageCode: string): string => {
-    switch (languageCode.toLowerCase()) {
-      case "en":
-        return "🇺🇸 English"; // Flag for English
-      case "es":
-        return "🇪🇸 Español"; // Flag for Spanish
-      case "fr":
-        return "🇫🇷 Français"; // Flag for French
-      case "ja":
-        return "🇯🇵 日本語"; // Flag for Japanese
-      default:
-        return "🌐 Unknown"; // Default flag for unknown languages
-    }
-  };
-
   const fetchLatestChats = () => {
     translation
       .getLatestChats(selectedLanguage)
@@ -50,13 +35,13 @@ const ChatApp = (props: { username: string }) => {
     translation
       .getSupportedLanguages()
       .then((response) => {
-        const supportedLanguages = response.supportedLanguages;
-        const mappedLanguages: LanguageOption[] = supportedLanguages.map(
-          (lang: string) => ({
-            value: lang,
-            label: getLabelForLanguage(lang),
-          }),
-        );
+        const supportedLanguagesMap = response.supportedLanguagesMap;
+        const mappedLanguages: LanguageOption[] = Object.entries(
+          supportedLanguagesMap,
+        ).map(([lang, label]) => ({
+          value: lang,
+          label: label,
+        }));
         setAvailableLanguages(mappedLanguages);
       })
       .catch((e) => console.error("error fetching supported languages", e));

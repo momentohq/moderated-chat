@@ -1,1 +1,6 @@
-export const supportedLanguages = ["en", "es", "fr", "ja"]
+export const supportedLanguagesMap = {
+  en: "🇺🇸 English",
+  es: "🇪🇸 Español",
+  fr: "🇫🇷 Français",
+  ja: "🇯🇵 日本語",
+}

@@ -2,7 +2,7 @@ import {API, Request, Response} from 'lambda-api';
 import {IRoute} from '../../../common/routes/IRoute';
 import logger from "../../../common/logger";
 import {TranslateClient, TranslateTextCommand} from "@aws-sdk/client-translate";
-import {supportedLanguages} from "../../../common/utils";
+import {supportedLanguagesMap} from "../../../common/utils";
 import {
     AllTopics,
     AuthClient, CacheClient, CacheListFetch, CollectionTtl,
@@ -70,7 +70,7 @@ export class TranslationRoute implements IRoute {
                 // try and filter first. This filter does not filter from all languages, but its a good start
                 const parsedMessage = JSON.parse(body.text) as ParsedMessage;
                 const filteredMessage = filter(parsedMessage.message ?? '');
-                for (const lang of supportedLanguages) {
+                for (const lang of Object.keys(supportedLanguagesMap)) {
                     const translateReq = new TranslateTextCommand({
                         SourceLanguageCode: 'auto',
                         TargetLanguageCode: lang,
@@ -146,9 +146,9 @@ export class TranslationRoute implements IRoute {
             });
             api.get('languages', (req: Request, res: Response) => {
                 logger.info('received request to get supported languages', {
-                    supportedLanguages
+                    supportedLanguagesMap
                 });
-                return res.status(200).send({ supportedLanguages });
+                return res.status(200).send({ supportedLanguagesMap });
             });
             api.get('token/:username', async (req: Request, res: Response) => {
                 if (!(req.params && req.params.username)) {
