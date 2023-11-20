@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import ChatApp from "./ChatApp";
 import momentoLogo from "./assets/MomentoLogo.svg";
 
