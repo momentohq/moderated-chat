@@ -18,7 +18,7 @@ const App: React.FC = () => {
 
   const handleKeyDown = (e: { keyCode: number }) => {
     if (e.keyCode == 13) {
-      setIsUsernameSet(true);
+      handleUsernameInput();
     }
   };
 
