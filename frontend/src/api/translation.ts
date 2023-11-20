@@ -28,6 +28,17 @@ class TranslationApi {
     });
     return response.json();
   }
+
+  async getSupportedLanguages(): Promise<{ supportedLanguages: string[] }> {
+    const url = `${this.baseUrl}/v1/translate/languages`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.json();
+  }
 }
 
 export default new TranslationApi();
