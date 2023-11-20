@@ -1,12 +1,12 @@
 # Moderated Chat
 
+This application uses Momento Webhooks to build a moderated, multi-language chat application. Users can chat with each other in multiple langauges at the same time, with profanity filtered out. This repository is structured as a mono repo, with our frontend, backend, and infrastructure code separated by folders. The folder structure is as follows
+
 ```
 ├── backend
 │   ├── LICENSE
 │   ├── README.md
-│   ├── dist
 │   ├── esbuild.ts
-│   ├── node_modules
 │   ├── package-lock.json
 │   ├── package.json
 │   ├── postbuild.ts
@@ -28,7 +28,6 @@
     ├── cdk.json
     ├── jest.config.js
     ├── lib
-    ├── node_modules
     ├── package-lock.json
     ├── package.json
     ├── test
@@ -37,12 +36,37 @@
 
 ## Backend
 
-Contains backend code for app
+Contains apis for the moderated chat application. There are a few apis that we are using
+
+`POST /v1/translate` - webhook listener for momento topic events
+`GET /v1/translate/latestMessages/<lang>` - returns the last 100 messages from the chat in the requested language
+`GET /v1/translate/supportedLanguages` - returns the languages that the application currently supports
+`GET /v1/translate/token/<username>` - returns a short lived token that allows <username> to publish to the `chat-publish` topic
+
+In order to run these apis, there needs to be a secret stored in aws secrets manager with the path `moderator/demo/secrets`. This secret should be key value pairs in the format
+
+```
+{
+  momentoApiKey: "",
+  webhookSigningSecret: "",
+}
+```
+- the `momentoApiKey` is a token, which can be created via the [momento console](https://console.gomomento.com/api-keys), with super user permissions. This token will be used to vend short lived publish/subscribe api keys to the frontend
+- the `webhookSigningSecret` is the signing secret associated with the Momento Webhook. It is used to validate that requests are coming from Momento
+
 
 ## Frontend
 
-Contains web application code
+Contains the frontend code for our chat application. To run
+
+1. `npm install`
+2. `npm run dev`
+3. open `localhost:5173` in a browser
 
 ## Infrastructure
 
-Contains cdk code to deploy infra for the moderated chat app
+This application uses [cdk](https://github.com/aws/aws-cdk) to deploy the infrastructure to aws. To deploy
+
+1. `npm install`
+2. `npm run build`
+3. `AWS_PROFILE=<my profile> AWS_REGION=<my region> npx cdk deploy`
