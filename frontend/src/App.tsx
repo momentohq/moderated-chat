@@ -4,14 +4,13 @@ import { setUsername, username } from "./utils/momento-web";
 import momentoLogo from "./assets/MomentoLogo.svg";
 
 const App: React.FC = () => {
-  const storedUserName = localStorage.getItem("username");
-  const [inputValue, setInputValue] = useState("");
-  const [isUsernameSet, setIsUsernameSet] = useState(storedUserName !== null);
+  const [inputValue, setInputValue] = useState(
+    localStorage.getItem("username"),
+  );
 
   const handleUsernameInput = () => {
-    if (inputValue.trim() !== "") {
+    if (inputValue?.trim()) {
       setUsername(inputValue);
-      setIsUsernameSet(true);
       localStorage.setItem("username", inputValue);
     }
   };
@@ -22,7 +21,7 @@ const App: React.FC = () => {
     }
   };
 
-  return !isUsernameSet ? (
+  return !username ? (
     <div className="flex h-screen items-center justify-center bg-gradient-to-r from-gray-800 to-gray-700">
       <div>
         <img src={momentoLogo} className="h-32 w-80" alt="Momento logo" />
@@ -32,7 +31,7 @@ const App: React.FC = () => {
           </label>
           <input
             type="text"
-            value={inputValue}
+            value={inputValue ?? ""}
             onChange={(e) => setInputValue(e.target.value)}
             className="mb-4 w-full border p-2"
             onKeyDown={handleKeyDown}
