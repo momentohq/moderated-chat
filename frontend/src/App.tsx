@@ -4,7 +4,9 @@ import { setUsername, username } from "./utils/momento-web";
 import momentoLogo from "./assets/MomentoLogo.svg";
 
 const App: React.FC = () => {
-  const [inputValue, setInputValue] = useState(localStorage.getItem("username"));
+  const [inputValue, setInputValue] = useState(
+    localStorage.getItem("username"),
+  );
 
   const handleUsernameInput = () => {
     if (inputValue.trim()) {
