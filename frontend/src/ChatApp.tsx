@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   type ChatMessageEvent,
   sendMessage,
-  setUsername,
   subscribeToTopic,
 } from "./utils/momento-web";
 import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
+import translation from "./api/translation";
 
 const ChatApp = (props: { username: string }) => {
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
@@ -13,9 +13,18 @@ const ChatApp = (props: { username: string }) => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
 
+  const fetchLatestChats = () => {
+    translation
+      .getLatestChats(selectedLanguage)
+      .then((_chats) => {
+        setChats(_chats.messages);
+      })
+      .catch((e) => console.error("error fetching latest chats", e));
+  };
+
   useEffect(() => {
-    setUsername(props.username);
-  });
+    void fetchLatestChats();
+  }, []);
 
   const availableLanguages = [
     { value: "en", label: "🇺🇸 English" },
@@ -41,7 +50,7 @@ const ChatApp = (props: { username: string }) => {
       "received error from momento, getting new token and resubscribing",
       error,
     );
-    await subscribeToTopic(selectedLanguage, onItem, onError);
+    await subscribeToTopic(props.username, selectedLanguage, onItem, onError);
   };
 
   const onSendMessage = async () => {
@@ -60,11 +69,12 @@ const ChatApp = (props: { username: string }) => {
   };
 
   useEffect(() => {
-    subscribeToTopic(selectedLanguage, onItem, onError)
+    subscribeToTopic(props.username, selectedLanguage, onItem, onError)
       .then(() => {
         console.log("successfully subscribed");
       })
       .catch((e) => console.error("error subscribing to topic", e));
+    void fetchLatestChats();
   }, [selectedLanguage]);
 
   const scrollToBottom = () => {

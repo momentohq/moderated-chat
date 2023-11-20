@@ -114,8 +114,8 @@ export class TranslationRoute implements IRoute {
                         });
                     }
                     const fourHoursInSeconds = 4 * 60 * 60;
-                    await this.cacheClient.listPushFront(this.cache, lang, JSON.stringify(messageToSend), {
-                        truncateBackToSize: 100,
+                    await this.cacheClient.listPushBack(this.cache, lang, JSON.stringify(messageToSend), {
+                        truncateFrontToSize: 100,
                         ttl: CollectionTtl.refreshTtlIfProvided(fourHoursInSeconds)
                     });
                 }

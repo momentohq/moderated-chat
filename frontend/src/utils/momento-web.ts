@@ -18,7 +18,6 @@ export type ChatMessageEvent = {
 
 let webTopicClient: TopicClient | undefined = undefined;
 let subscription: TopicSubscribe.Subscription | undefined = undefined;
-export let username: string;
 let onItemCb: (item: TopicItem) => void;
 let onErrorCb: (
   error: TopicSubscribe.Error,
@@ -32,11 +31,7 @@ type MomentoClients = {
 const cacheName = "moderator";
 const topicName = "chat-publish";
 
-export function setUsername(_username: string) {
-  username = _username;
-}
-
-async function getNewWebClients(): Promise<MomentoClients> {
+async function getNewWebClients(username: string): Promise<MomentoClients> {
   webTopicClient = undefined;
   // we don't want to cache the token, since it will expire in 5 min
   // await fetch(window.location.origin + "/api/momento/token", {
@@ -62,16 +57,17 @@ const clearCurrentClient = () => {
   webTopicClient = undefined;
 };
 
-async function getWebTopicClient(): Promise<TopicClient> {
+async function getWebTopicClient(username: string): Promise<TopicClient> {
   if (webTopicClient) {
     return webTopicClient;
   }
 
-  const clients = await getNewWebClients();
+  const clients = await getNewWebClients(username);
   return clients.topicClient;
 }
 
 export async function subscribeToTopic(
+  username: string,
   languageCode: string,
   onItem: (item: TopicItem) => void,
   onError: (
@@ -84,7 +80,7 @@ export async function subscribeToTopic(
   clearCurrentClient();
   onErrorCb = onError;
   onItemCb = onItem;
-  const topicClient = await getWebTopicClient();
+  const topicClient = await getWebTopicClient(username);
   const resp = await topicClient.subscribe(cacheName, topic, {
     onItem: onItemCb,
     onError: onErrorCb,
@@ -97,8 +93,12 @@ export async function subscribeToTopic(
   throw new Error(`unable to subscribe to topic: ${resp}`);
 }
 
-async function publish(targetLanguage: string, message: string) {
-  const topicClient = await getWebTopicClient();
+async function publish(
+  username: string,
+  targetLanguage: string,
+  message: string,
+) {
+  const topicClient = await getWebTopicClient(username);
   const resp = await topicClient.publish(cacheName, topicName, message);
   if (resp instanceof TopicPublish.Error) {
     if (resp.errorCode() === MomentoErrorCode.AUTHENTICATION_ERROR) {
@@ -106,8 +106,8 @@ async function publish(targetLanguage: string, message: string) {
         "token has expired, going to refresh subscription and retry publish",
       );
       clearCurrentClient();
-      await subscribeToTopic(targetLanguage, onItemCb, onErrorCb);
-      await publish(targetLanguage, message);
+      await subscribeToTopic(username, targetLanguage, onItemCb, onErrorCb);
+      await publish(username, targetLanguage, message);
     } else {
       console.error("failed to publish to topic", resp);
     }
@@ -127,5 +127,9 @@ export async function sendMessage(props: SendMessageProps) {
     sourceLanguage: props.sourceLanguage,
     timestamp: Date.now(),
   };
-  await publish(props.sourceLanguage, JSON.stringify(chatMessage));
+  await publish(
+    props.username,
+    props.sourceLanguage,
+    JSON.stringify(chatMessage),
+  );
 }
