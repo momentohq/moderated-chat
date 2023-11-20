@@ -7,7 +7,7 @@ import {
 import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
 import translation from "./api/translation";
 
-interface LanguageOption {
+export interface LanguageOption {
   value: string;
   label: string;
 }
@@ -35,14 +35,8 @@ const ChatApp = (props: { username: string }) => {
     translation
       .getSupportedLanguages()
       .then((response) => {
-        const supportedLanguagesMap = response.supportedLanguagesMap;
-        const mappedLanguages: LanguageOption[] = Object.entries(
-          supportedLanguagesMap,
-        ).map(([lang, label]) => ({
-          value: lang,
-          label: label,
-        }));
-        setAvailableLanguages(mappedLanguages);
+        const supportedLanguages = response.supportedLanguages;
+        setAvailableLanguages(supportedLanguages);
       })
       .catch((e) => console.error("error fetching supported languages", e));
   };

@@ -2,7 +2,7 @@ import {API, Request, Response} from 'lambda-api';
 import {IRoute} from '../../../common/routes/IRoute';
 import logger from "../../../common/logger";
 import {TranslateClient, TranslateTextCommand} from "@aws-sdk/client-translate";
-import {supportedLanguagesMap} from "../../../common/utils";
+import {LanguageOption, supportedLanguagesMap} from "../../../common/utils";
 import {
     AllTopics,
     AuthClient, CacheClient, CacheListFetch, CollectionTtl,
@@ -145,10 +145,14 @@ export class TranslationRoute implements IRoute {
                 return res.status(500).send('failed to fetch previous messages');
             });
             api.get('languages', (req: Request, res: Response) => {
+                const supportedLanguages: LanguageOption[] = Object.entries(
+                    supportedLanguagesMap
+                ).map(([value, label]) => ({ value, label }));
+
                 logger.info('received request to get supported languages', {
                     supportedLanguagesMap
                 });
-                return res.status(200).send({ supportedLanguagesMap });
+                return res.status(200).send({ supportedLanguages});
             });
             api.get('token/:username', async (req: Request, res: Response) => {
                 if (!(req.params && req.params.username)) {

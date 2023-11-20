@@ -1,4 +1,5 @@
 import { type ChatMessageEvent } from "../utils/momento-web";
+import { type LanguageOption } from "../ChatApp";
 
 class TranslationApi {
   private readonly baseUrl =
@@ -30,7 +31,7 @@ class TranslationApi {
   }
 
   async getSupportedLanguages(): Promise<{
-    supportedLanguagesMap: Map<string, string>;
+    supportedLanguages: LanguageOption[];
   }> {
     const url = `${this.baseUrl}/v1/translate/languages`;
     const response = await fetch(url, {

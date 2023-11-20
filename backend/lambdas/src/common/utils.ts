@@ -1,3 +1,8 @@
+export interface LanguageOption {
+  value: string;
+  label: string;
+}
+
 export const supportedLanguagesMap = {
   en: "🇺🇸 English",
   es: "🇪🇸 Español",
