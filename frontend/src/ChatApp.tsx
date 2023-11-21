@@ -37,8 +37,6 @@ const ChatApp = (props: { username: string }) => {
     return usernameColorMap[username];
   };
 
-  console.log(usernameColorMap);
-
   const fetchLatestChats = () => {
     translation
       .getLatestChats(selectedLanguage)
