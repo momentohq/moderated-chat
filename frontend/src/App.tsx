@@ -1,15 +1,26 @@
 import React, { useState } from "react";
 import ChatApp from "./ChatApp";
 import momentoLogo from "./assets/MomentoLogo.svg";
+import Filter from "bad-words";
 
 const App: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
   const [username, setUsername] = useState(localStorage.getItem("username"));
+  const [error, setError] = useState<string | null>(null);
+
+  const profanityFilter = new Filter();
 
   const handleUsernameInput = () => {
-    if (inputValue?.trim()) {
-      setUsername(inputValue);
-      localStorage.setItem("username", inputValue);
+    const trimmedValue = inputValue.trim();
+
+    if (trimmedValue) {
+      if (profanityFilter.isProfane(trimmedValue)) {
+        setError("Username contains profanity. Please choose another.");
+      } else {
+        setUsername(trimmedValue);
+        localStorage.setItem("username", trimmedValue);
+        setError(null);
+      }
     }
   };
 
@@ -40,6 +51,7 @@ const App: React.FC = () => {
           >
             Submit
           </button>
+          {error && <div className="mt-2 text-red-500">{error}</div>}
         </div>
       </div>
     </div>
