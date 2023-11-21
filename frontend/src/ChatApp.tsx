@@ -6,6 +6,7 @@ import {
 } from "./utils/momento-web";
 import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
 import translation from "./api/translation";
+import momentoLogoGreen from "./assets/MomentoLogoGreen.svg";
 
 export interface LanguageOption {
   value: string;
@@ -109,7 +110,14 @@ const ChatApp = (props: { username: string }) => {
   return (
     <div className="flex h-screen flex-col bg-gradient-to-b from-gray-800 to-black text-white">
       <div className="flex flex-none items-center justify-between bg-gray-900 p-4">
-        <h1 className="text-3xl font-bold">Welcome to the Chat App</h1>
+        <div className={"flex flex-row space-x-4"}>
+          <img
+            src={momentoLogoGreen}
+            className="h-10 w-10"
+            alt="Momento logo Green"
+          />
+          <h1 className="text-3xl font-bold">Welcome to the Momento Chat</h1>
+        </div>
         <div className="flex items-center">
           <select
             className="border-none bg-transparent focus:outline-none"
@@ -133,7 +141,11 @@ const ChatApp = (props: { username: string }) => {
             } animate__animated animate__fadeIn rounded-md`}
           >
             <div className="mb-1 text-sm text-gray-700">
-              {chat.username} - {new Date(chat.timestamp).toLocaleTimeString()}
+              {chat.username} -{" "}
+              {new Date(chat.timestamp).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </div>
             <div className="text-white">{chat.message}</div>
           </div>
