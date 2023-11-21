@@ -10,6 +10,6 @@ export const supportedLanguagesMap = {
   ja: "🇯🇵 日本語",
   de: "🇩🇪 Deutsch",
   hi: "🇮🇳 हिन्दी",
-  "zh-TW": "🇹🇼 中文",
+  "zh-TW": "🇨🇳 中文",
   nl: "🇳🇱 Dutch",
 }
