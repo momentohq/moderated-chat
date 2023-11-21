@@ -7,7 +7,7 @@ import {TranslationRoute} from "./routes/v1/translation";
 import {
     AuthClient,
     CacheClient,
-    CacheConfiguration, Configurations,
+    Configurations,
     CredentialProvider,
     TopicClient,
     TopicConfigurations
@@ -27,6 +27,7 @@ let api: API;
 
 type TranslationSecrets = {
     momentoApiKey: string;
+    momentoSigningSecret: string;
 }
 
 export const createTranslationsApi = async (
@@ -89,6 +90,7 @@ export const createTranslationsApi = async (
         cache: cacheName,
         authClient,
         cacheClient,
+        signingSecret: parsedSecret.momentoSigningSecret,
     });
     api.register(translationRoute.routes(), {
         prefix: '/v1/translate',
