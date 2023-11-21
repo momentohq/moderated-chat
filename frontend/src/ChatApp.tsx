@@ -7,6 +7,7 @@ import {
 import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
 import translation from "./api/translation";
 import momentoLogoGreen from "./assets/MomentoLogoGreen.svg";
+import md5 from "md5";
 
 export interface LanguageOption {
   value: string;
@@ -22,6 +23,21 @@ const ChatApp = (props: { username: string }) => {
   const [availableLanguages, setAvailableLanguages] = useState<
     LanguageOption[]
   >([]);
+
+  const usernameColorMap: Record<string, string> = {};
+  const getUsernameColor = (username: string) => {
+    if (!usernameColorMap[username]) {
+      const hash = md5(username);
+      const r = parseInt(hash.slice(0, 2), 16);
+      const g = parseInt(hash.slice(2, 4), 16);
+      const b = parseInt(hash.slice(4, 6), 16);
+      usernameColorMap[username] = `rgb(${r}, ${g}, ${b})`;
+    }
+
+    return usernameColorMap[username];
+  };
+
+  console.log(usernameColorMap);
 
   const fetchLatestChats = () => {
     translation
@@ -113,10 +129,10 @@ const ChatApp = (props: { username: string }) => {
         <div className={"flex flex-row space-x-4"}>
           <img
             src={momentoLogoGreen}
-            className="h-10 w-10"
+            className="h-8 w-8"
             alt="Momento logo Green"
           />
-          <h1 className="text-3xl font-bold">Welcome to the Momento Chat</h1>
+          <h1 className="text-3xl font-bold">Welcome to Momento Chat</h1>
         </div>
         <div className="flex items-center">
           <select
@@ -134,20 +150,25 @@ const ChatApp = (props: { username: string }) => {
       </div>
       <div className="flex-1 overflow-y-scroll p-4">
         {chats.map((chat, index) => (
-          <div
-            key={index}
-            className={`mb-2 p-2 ${
-              chat.username != props.username ? "bg-blue-500" : "bg-green-500"
-            } animate__animated animate__fadeIn rounded-md`}
-          >
-            <div className="mb-1 text-sm text-gray-700">
-              {chat.username} -{" "}
-              {new Date(chat.timestamp).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+          <div key={index} className={`mb-2 flex items-start p-2`}>
+            <div
+              className="mr-6 flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full"
+              style={{ backgroundColor: getUsernameColor(chat.username) }}
+            >
+              <span className="text-xs font-bold text-white">
+                {chat.username.charAt(0).toUpperCase()}
+              </span>
             </div>
-            <div className="text-white">{chat.message}</div>
+            <div>
+              <div className="mb-1 text-sm text-gray-400">
+                {chat.username} -{" "}
+                {new Date(chat.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+              <div className="text-white">{chat.message}</div>
+            </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
