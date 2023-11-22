@@ -100,7 +100,7 @@ const ChatApp = (props: { user: User }) => {
     setTextInput("");
   };
 
-  const debouncedSendMessage = debounce(onSendMessage, 1000);
+  const debouncedSendMessage = debounce(onSendMessage, 500);
 
   const onEnterClicked = async (e: { keyCode: number }) => {
     if (e.keyCode === 13 && textInput) {
