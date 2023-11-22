@@ -9,6 +9,7 @@ import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
 import translation from "./api/translation";
 import momentoLogoGreen from "./assets/MomentoLogoGreen.svg";
 import md5 from "md5";
+import { debounce } from "lodash";
 
 export interface LanguageOption {
   value: string;
@@ -99,6 +100,8 @@ const ChatApp = (props: { user: User }) => {
     setTextInput("");
   };
 
+  const debouncedSendMessage = debounce(onSendMessage, 500);
+
   const onEnterClicked = async (e: { keyCode: number }) => {
     if (e.keyCode === 13 && textInput) {
       await onSendMessage();
@@ -159,12 +162,15 @@ const ChatApp = (props: { user: User }) => {
               </span>
             </div>
             <div>
-              <div className="mb-1 text-sm text-gray-400">
+              <div className="mb-1 flex flex-row text-sm text-gray-400">
                 {chat.user.username} -{" "}
                 {new Date(chat.timestamp).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
+                {props.user.id === chat.user.id && (
+                  <span className={"ml-2 font-bold"}>(You)</span>
+                )}
               </div>
               <div className="text-white">{chat.message}</div>
             </div>
@@ -182,7 +188,7 @@ const ChatApp = (props: { user: User }) => {
           className="mr-2 flex-1 rounded border border-gray-500 bg-gray-800 p-2 text-white focus:outline-none"
         />
         <button
-          onClick={onSendMessage}
+          onClick={debouncedSendMessage}
           disabled={!textInput}
           className="rounded bg-pink-500 p-2 text-white transition duration-300 hover:bg-pink-600 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-500 disabled:brightness-75"
         >
