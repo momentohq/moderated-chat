@@ -12,6 +12,7 @@ import {
     TopicPublish
 } from "@gomomento/sdk";
 import {filter} from 'curse-filter';
+import * as crypto from 'crypto';
 
 type Props = {
     translateClient: TranslateClient;
@@ -20,6 +21,7 @@ type Props = {
     authClient: AuthClient;
     cache: string;
     baseTopicName: string;
+    signingSecret: string;
 }
 
 type ParsedMessage = {
@@ -52,6 +54,7 @@ export class TranslationRoute implements IRoute {
     private readonly cacheClient: CacheClient;
     private readonly cache: string;
     private readonly baseTopicName: string;
+    private readonly signingSecret: string;
     constructor(props: Props) {
         this.translateClient = props.translateClient;
         this.topicClient = props.topicClient;
@@ -59,65 +62,25 @@ export class TranslationRoute implements IRoute {
         this.baseTopicName = props.baseTopicName;
         this.authClient = props.authClient;
         this.cacheClient = props.cacheClient;
+        this.signingSecret = props.signingSecret;
     }
     routes(): (api: API) => void {
         return (api: API): void => {
             api.post('', async (req: Request, res: Response) => {
                 logger.info('received translation request', {
                     body: req.body,
-                })
+                });
+                if (!this.didRequestComeFromMomento(req)) {
+                    logger.warn('unable to validate signing key');
+                    return res.status(401).send({ message: 'unable to validate signing key' });
+                }
                 const body = req.body as TranslationRequest;
                 // try and filter first. This filter does not filter from all languages, but its a good start
                 const parsedMessage = JSON.parse(body.text) as ParsedMessage;
                 const filteredMessage = filter(parsedMessage.message ?? '');
                 for (const lang of Object.keys(supportedLanguagesMap)) {
-                    const translateReq = new TranslateTextCommand({
-                        SourceLanguageCode: 'auto',
-                        TargetLanguageCode: lang,
-                        Text: filteredMessage,
-                        Settings: {
-                            Profanity: "MASK"
-                        }
-                    });
-                    logger.info('translating', {
-                        source: parsedMessage.sourceLanguage,
-                        target: lang,
-                    });
-                    const translateResp = await this.translateClient.send(translateReq);
-                    logger.info('translated response', {
-                        metadata: translateResp.$metadata,
-                        source: translateResp.SourceLanguageCode,
-                        target: translateResp.TargetLanguageCode,
-                        translatedText: translateResp.TranslatedText,
-                    });
-                    const topicName = this.generateTopicName(lang);
-                    const messageToSend: MessageToPublish = {
-                        timestamp: parsedMessage.timestamp,
-                        message: translateResp.TranslatedText ?? '',
-                        sourceLanguage: lang,
-                        username: body.token_id,
-                    }
-                    logger.info('publishing translated text to topic', {
-                        topic: topicName,
-                        messageToSend,
-                    });
-                    const publishResp = await this.topicClient.publish(this.cache, topicName, JSON.stringify(messageToSend));
-                    if (publishResp instanceof TopicPublish.Success) {
-                        logger.info('successfully published translated text', {
-                            topic: topicName,
-                        });
-                    } else if (publishResp instanceof TopicPublish.Error) {
-                        logger.error('failed to published translated text, will try and publish the rest of the messages', {
-                            topic: topicName,
-                            message: publishResp.message(),
-                            exception: publishResp.innerException()
-                        });
-                    }
-                    const fourHoursInSeconds = 4 * 60 * 60;
-                    await this.cacheClient.listPushBack(this.cache, lang, JSON.stringify(messageToSend), {
-                        truncateFrontToSize: 100,
-                        ttl: CollectionTtl.refreshTtlIfProvided(fourHoursInSeconds)
-                    });
+                    const translatedMessage = await this.translateMessage({ targetLanguage: lang, sourceLanguage: parsedMessage.sourceLanguage, message: filteredMessage });
+                    await this.publishTranslatedText({ username: body.token_id, sourceLanguage: lang, message: translatedMessage, timestamp: parsedMessage.timestamp });
                 }
 
                 return res.status(200).send({ message: 'success' });
@@ -181,5 +144,64 @@ export class TranslationRoute implements IRoute {
 
     private generateTopicName = (lang: string): string => {
         return `${this.baseTopicName}-${lang}`;
+    }
+
+    private didRequestComeFromMomento = (req: Request): boolean => {
+        const hash = crypto.createHmac("SHA3-256", this.signingSecret);
+        const hashed = hash.update(req.rawBody).digest('hex');
+        return hashed === req.headers['momento-signature'];
+    }
+
+    private translateMessage = async (props: { targetLanguage: string, message: string, sourceLanguage: string }): Promise<string> => {
+        const translateReq = new TranslateTextCommand({
+            SourceLanguageCode: 'auto',
+            TargetLanguageCode: props.targetLanguage,
+            Text: props.message,
+            Settings: {
+                Profanity: "MASK"
+            }
+        });
+        logger.info('translating', {
+            sourceLang: props.sourceLanguage,
+            targetLang: props.targetLanguage,
+        });
+        const translateResp = await this.translateClient.send(translateReq);
+        logger.info('translated response', {
+            metadata: translateResp.$metadata,
+            source: translateResp.SourceLanguageCode,
+            target: translateResp.TargetLanguageCode,
+            translatedText: translateResp.TranslatedText,
+        });
+        return translateResp.TranslatedText ?? '';
+    }
+    private publishTranslatedText = async (props: { username: string, timestamp: number, message: string, sourceLanguage: string }) => {
+        const topicName = this.generateTopicName(props.sourceLanguage);
+        const messageToSend: MessageToPublish = {
+            timestamp: props.timestamp,
+            message: props.message,
+            sourceLanguage: props.sourceLanguage,
+            username: props.username,
+        }
+        logger.info('publishing translated text to topic', {
+            topic: topicName,
+            messageToSend,
+        });
+        const publishResp = await this.topicClient.publish(this.cache, topicName, JSON.stringify(messageToSend));
+        if (publishResp instanceof TopicPublish.Success) {
+            logger.info('successfully published translated text', {
+                topic: topicName,
+            });
+        } else if (publishResp instanceof TopicPublish.Error) {
+            logger.error('failed to published translated text, will try and publish the rest of the messages', {
+                topic: topicName,
+                message: publishResp.message(),
+                exception: publishResp.innerException()
+            });
+        }
+        const fourHoursInSeconds = 4 * 60 * 60;
+        await this.cacheClient.listPushBack(this.cache, props.sourceLanguage, JSON.stringify(messageToSend), {
+            truncateFrontToSize: 100,
+            ttl: CollectionTtl.refreshTtlIfProvided(fourHoursInSeconds)
+        });
     }
 }
