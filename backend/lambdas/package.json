@@ -13,6 +13,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/aws-lambda": "^8.10.125",
+    "@types/bad-words": "^3.0.3",
     "@types/lambda-log": "^3.0.2",
     "esbuild": "^0.19.5",
     "serverless": "^3.36.0",
@@ -21,10 +22,12 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "@aws-sdk/client-comprehend": "^3.454.0",
     "@aws-sdk/client-secrets-manager": "3.451.0",
-    "@aws-sdk/client-translate": "3.451.0",
+    "@aws-sdk/client-translate": "^3.451.0",
     "@gomomento/sdk": "1.51.1",
     "aws-lambda": "^1.0.7",
+    "bad-words": "^3.0.4",
     "curse-filter": "^5.2.4",
     "lambda-api": "^1.0.3",
     "lambda-log": "^3.1.0"

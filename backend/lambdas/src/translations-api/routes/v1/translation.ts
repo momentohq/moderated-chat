@@ -11,7 +11,7 @@ import {
     TopicClient,
     TopicPublish
 } from "@gomomento/sdk";
-import {filter} from 'curse-filter';
+import Filter from 'bad-words';
 import * as crypto from 'crypto';
 
 type User = {
@@ -72,6 +72,7 @@ export class TranslationRoute implements IRoute {
         this.signingSecret = props.signingSecret;
     }
     routes(): (api: API) => void {
+        const profanityFilter = new Filter();
         return (api: API): void => {
             api.post('', async (req: Request, res: Response) => {
                 logger.info('received translation request', {
@@ -82,10 +83,12 @@ export class TranslationRoute implements IRoute {
                     return res.status(401).send({ message: 'unable to validate signing key' });
                 }
                 const body = req.body as TranslationRequest;
-                // try and filter first. This filter does not filter from all languages, but its a good start
-                const parsedMessage = JSON.parse(body.text) as ParsedMessage;
-                const filteredMessage = filter(parsedMessage.message ?? '');
                 const user = this.getUserFromTokenId(body.token_id);
+
+                // try and filter first. This filter does not filter from all languages, but it's a good start
+                const parsedMessage = JSON.parse(body.text) as ParsedMessage;
+                const filteredMessage = profanityFilter.clean(parsedMessage.message ?? '');
+
                 for (const lang of Object.keys(supportedLanguagesMap)) {
                     const translatedMessage = await this.translateMessage({
                         targetLanguage: lang,
@@ -108,7 +111,7 @@ export class TranslationRoute implements IRoute {
             api.get('latestMessages/:language', async (req: Request, res: Response) => {
                 if (!(req.params && req.params.language)) {
                     return res.status(400).send({ message: 'missing required path param "language"'});
-                };
+                }
                 const listResp = await this.cacheClient.listFetch(this.cache, req.params.language);
                 if (listResp instanceof CacheListFetch.Hit) {
                     const publishedMessages = listResp.valueListString().map(item => {
@@ -155,8 +158,8 @@ export class TranslationRoute implements IRoute {
                     });
                     return res.status(500).send({ message: "unable to create token" });
                 }
-                logger.error('unknown error occured when generating a disposable token', { resp: disposableTokenResp });
-                return res.status(500).send({ message: 'unknown error occured when generating a disposable token' });
+                logger.error('unknown error occurred when generating a disposable token', { resp: disposableTokenResp });
+                return res.status(500).send({ message: 'unknown error occurred when generating a disposable token' });
             })
         };
     }

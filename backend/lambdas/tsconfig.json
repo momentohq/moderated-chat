@@ -25,7 +25,8 @@
     "typeRoots": [
       "./node_modules/@types"
     ],
-    "baseUrl": "./node_modules"
+    "baseUrl": "./node_modules",
+    "allowSyntheticDefaultImports": true
   },
   "exclude": [
     "node_modules"
