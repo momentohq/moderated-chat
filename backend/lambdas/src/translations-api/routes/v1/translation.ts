@@ -11,8 +11,7 @@ import {
     TopicClient,
     TopicPublish
 } from "@gomomento/sdk";
-import {Comprehend, DetectSentimentCommandInput} from "@aws-sdk/client-comprehend";
-import {filter} from 'curse-filter';
+import Filter from 'bad-words';
 import * as crypto from 'crypto';
 
 type User = {
@@ -55,8 +54,6 @@ type MessageToPublish = {
 
 type CreateTokenRequest = User;
 
-const comprehend = new Comprehend();
-
 export class TranslationRoute implements IRoute {
     private readonly translateClient: TranslateClient;
     private readonly topicClient: TopicClient;
@@ -75,25 +72,7 @@ export class TranslationRoute implements IRoute {
         this.signingSecret = props.signingSecret;
     }
     routes(): (api: API) => void {
-        async function analyzeSentiment(text: string): Promise<string> {
-            try {
-                const params: DetectSentimentCommandInput = {
-                    Text: text,
-                    LanguageCode: undefined,
-                };
-
-                const sentimentAnalysis = await comprehend.detectSentiment(params);
-                return sentimentAnalysis.Sentiment || 'NEUTRAL';
-            } catch (error) {
-                console.error('Amazon Comprehend error:', error);
-                return 'NEUTRAL';
-            }
-        }
-
-        function filterOutCurseWords(text: string): string {
-            return filter(text);
-        }
-
+        const profanityFilter = new Filter();
         return (api: API): void => {
             api.post('', async (req: Request, res: Response) => {
                 logger.info('received translation request', {
@@ -108,14 +87,7 @@ export class TranslationRoute implements IRoute {
 
                 // try and filter first. This filter does not filter from all languages, but it's a good start
                 const parsedMessage = JSON.parse(body.text) as ParsedMessage;
-                // const filteredMessage = filter(parsedMessage.message ?? '');
-                const sentiment = await analyzeSentiment(parsedMessage.message ?? '');
-                let filteredMessage;
-                if (sentiment === 'NEGATIVE') {
-                    filteredMessage = filterOutCurseWords(parsedMessage.message ?? '');
-                } else {
-                    filteredMessage = parsedMessage.message;
-                }
+                const filteredMessage = profanityFilter.clean(parsedMessage.message ?? '');
 
                 for (const lang of Object.keys(supportedLanguagesMap)) {
                     const translatedMessage = await this.translateMessage({
