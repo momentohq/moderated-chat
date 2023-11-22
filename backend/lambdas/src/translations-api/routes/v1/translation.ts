@@ -14,6 +14,11 @@ import {
 import {filter} from 'curse-filter';
 import * as crypto from 'crypto';
 
+type User = {
+    id: string;
+    username: string;
+}
+
 type Props = {
     translateClient: TranslateClient;
     topicClient: TopicClient;
@@ -44,8 +49,10 @@ type MessageToPublish = {
     message: string;
     sourceLanguage: string;
     timestamp: number;
-    username: string;
+    user: User;
 }
+
+type CreateTokenRequest = User;
 
 export class TranslationRoute implements IRoute {
     private readonly translateClient: TranslateClient;
@@ -78,9 +85,22 @@ export class TranslationRoute implements IRoute {
                 // try and filter first. This filter does not filter from all languages, but its a good start
                 const parsedMessage = JSON.parse(body.text) as ParsedMessage;
                 const filteredMessage = filter(parsedMessage.message ?? '');
+                const user = this.getUserFromTokenId(body.token_id);
                 for (const lang of Object.keys(supportedLanguagesMap)) {
-                    const translatedMessage = await this.translateMessage({ targetLanguage: lang, sourceLanguage: parsedMessage.sourceLanguage, message: filteredMessage });
-                    await this.publishTranslatedText({ username: body.token_id, sourceLanguage: lang, message: translatedMessage, timestamp: parsedMessage.timestamp });
+                    const translatedMessage = await this.translateMessage({
+                        targetLanguage: lang,
+                        sourceLanguage: parsedMessage.sourceLanguage,
+                        message: filteredMessage
+                    });
+                    await this.publishTranslatedText({
+                        user: {
+                            username: user.username,
+                            id: user.id,
+                        },
+                        sourceLanguage: lang,
+                        message: translatedMessage,
+                        timestamp: parsedMessage.timestamp
+                    });
                 }
 
                 return res.status(200).send({ message: 'success' });
@@ -117,15 +137,14 @@ export class TranslationRoute implements IRoute {
                 });
                 return res.status(200).send({ supportedLanguages});
             });
-            api.get('token/:username', async (req: Request, res: Response) => {
-                if (!(req.params && req.params.username)) {
-                    return res.status(400).send({ message: 'missing required path param "username"'});
-                }
+            api.post('token', async (req: Request, res: Response) => {
                 logger.info('received request to get token for chat', {
-                    username: req.params.username
+                    username: req.body
                 });
+                const parsedBody = req.body as CreateTokenRequest;
                 const publishSubscribeScope = DisposableTokenScopes.topicPublishSubscribe(this.cache, AllTopics);
-                const disposableTokenResp = await this.authClient.generateDisposableToken(publishSubscribeScope, ExpiresIn.minutes(5), { tokenId: req.params.username });
+                const tokenId = this.generateTokenId(parsedBody);
+                const disposableTokenResp = await this.authClient.generateDisposableToken(publishSubscribeScope, ExpiresIn.minutes(5), { tokenId });
                 if (disposableTokenResp instanceof GenerateDisposableToken.Success) {
                     return res.status(200).send({ token: disposableTokenResp.authToken, expiresAtEpoch: disposableTokenResp.expiresAt.epoch() });
                 } else if (disposableTokenResp instanceof GenerateDisposableToken.Error) {
@@ -144,6 +163,19 @@ export class TranslationRoute implements IRoute {
 
     private generateTopicName = (lang: string): string => {
         return `${this.baseTopicName}-${lang}`;
+    }
+
+    private generateTokenId = (user: User): string => {
+        return `${user.id}:${user.username}`;
+    }
+
+    private getUserFromTokenId = (tokenId: string): User => {
+        const username = tokenId.split(':')[1];
+        const userId = tokenId.split(':')[0];
+        return {
+            username,
+            id: userId
+        }
     }
 
     private didRequestComeFromMomento = (req: Request): boolean => {
@@ -174,13 +206,13 @@ export class TranslationRoute implements IRoute {
         });
         return translateResp.TranslatedText ?? '';
     }
-    private publishTranslatedText = async (props: { username: string, timestamp: number, message: string, sourceLanguage: string }) => {
+    private publishTranslatedText = async (props: { user: User, timestamp: number, message: string, sourceLanguage: string }) => {
         const topicName = this.generateTopicName(props.sourceLanguage);
         const messageToSend: MessageToPublish = {
             timestamp: props.timestamp,
             message: props.message,
             sourceLanguage: props.sourceLanguage,
-            username: props.username,
+            user: props.user,
         }
         logger.info('publishing translated text to topic', {
             topic: topicName,

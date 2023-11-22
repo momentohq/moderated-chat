@@ -2,10 +2,14 @@ import React, { useState } from "react";
 import ChatApp from "./ChatApp";
 import momentoLogo from "./assets/MomentoLogo.svg";
 import Filter from "bad-words";
+import { v4 } from "uuid";
+import { type User } from "./utils/momento-web";
 
 const App: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
-  const [username, setUsername] = useState(localStorage.getItem("username"));
+  const storedUser = localStorage.getItem("username-v2");
+  const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+  const [user, setUser] = useState<User>(parsedUser);
   const [error, setError] = useState<string | null>(null);
 
   const profanityFilter = new Filter();
@@ -17,8 +21,12 @@ const App: React.FC = () => {
       if (profanityFilter.isProfane(trimmedValue)) {
         setError("Username contains profanity. Please choose another.");
       } else {
-        setUsername(trimmedValue);
-        localStorage.setItem("username", trimmedValue);
+        const user = {
+          username: trimmedValue,
+          id: v4(),
+        };
+        setUser(user);
+        localStorage.setItem("username-v2", JSON.stringify(user));
         setError(null);
       }
     }
@@ -30,7 +38,7 @@ const App: React.FC = () => {
     }
   };
 
-  return !username ? (
+  return !user ? (
     <div className="flex h-screen items-center justify-center bg-gradient-to-r from-gray-800 to-gray-700">
       <div>
         <img src={momentoLogo} className="h-32 w-80" alt="Momento logo" />
@@ -56,7 +64,7 @@ const App: React.FC = () => {
       </div>
     </div>
   ) : (
-    <ChatApp username={username} />
+    <ChatApp user={user} />
   );
 };
 

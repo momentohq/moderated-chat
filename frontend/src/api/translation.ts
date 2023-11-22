@@ -1,18 +1,19 @@
-import { type ChatMessageEvent } from "../utils/momento-web";
+import { type ChatMessageEvent, type User } from "../utils/momento-web";
 import { type LanguageOption } from "../ChatApp";
 
 class TranslationApi {
   private readonly baseUrl =
     "https://57zovcekn0.execute-api.us-west-2.amazonaws.com/prod";
-  async getToken(
-    username: string,
+  async createToken(
+    user: User,
   ): Promise<{ token: string; expiresAtEpoch: number }> {
-    const url = `${this.baseUrl}/v1/translate/token/${username}`;
+    const url = `${this.baseUrl}/v1/translate/token`;
     const response = await fetch(url, {
-      method: "GET",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
+      body: JSON.stringify(user),
     });
     return response.json();
   }

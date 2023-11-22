@@ -3,6 +3,7 @@ import {
   type ChatMessageEvent,
   sendMessage,
   subscribeToTopic,
+  type User,
 } from "./utils/momento-web";
 import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
 import translation from "./api/translation";
@@ -13,7 +14,7 @@ export interface LanguageOption {
   value: string;
   label: string;
 }
-const ChatApp = (props: { username: string }) => {
+const ChatApp = (props: { user: User }) => {
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
   const [textInput, setTextInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -86,12 +87,12 @@ const ChatApp = (props: { username: string }) => {
       "received error from momento, getting new token and resubscribing",
       error,
     );
-    await subscribeToTopic(props.username, selectedLanguage, onItem, onError);
+    await subscribeToTopic(props.user, selectedLanguage, onItem, onError);
   };
 
   const onSendMessage = async () => {
     await sendMessage({
-      username: props.username,
+      user: props.user,
       message: textInput,
       sourceLanguage: selectedLanguage,
     });
@@ -105,7 +106,7 @@ const ChatApp = (props: { username: string }) => {
   };
 
   useEffect(() => {
-    subscribeToTopic(props.username, selectedLanguage, onItem, onError)
+    subscribeToTopic(props.user, selectedLanguage, onItem, onError)
       .then(() => {
         console.log("successfully subscribed");
       })
@@ -151,15 +152,15 @@ const ChatApp = (props: { username: string }) => {
           <div key={index} className={`mb-2 flex items-start p-2`}>
             <div
               className="mr-6 flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full"
-              style={{ backgroundColor: getUsernameColor(chat.username) }}
+              style={{ backgroundColor: getUsernameColor(chat.user.id) }}
             >
               <span className="text-xs font-bold text-white">
-                {chat.username.charAt(0).toUpperCase()}
+                {chat.user.username.charAt(0).toUpperCase()}
               </span>
             </div>
             <div>
               <div className="mb-1 text-sm text-gray-400">
-                {chat.username} -{" "}
+                {chat.user.username} -{" "}
                 {new Date(chat.timestamp).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
