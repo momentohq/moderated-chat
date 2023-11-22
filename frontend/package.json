@@ -32,7 +32,7 @@
     "react-toastify": "^9.1.2",
     "recharts": "^2.7.2",
     "unstated-next": "^1.1.0",
-    "uuid": "^9.0.0",
+    "uuid": "^9.0.1",
     "web-vitals": "^3.5.0"
   },
   "scripts": {
@@ -76,7 +76,7 @@
     "@types/react-datepicker": "^4.10.0",
     "@types/react-dom": "^18.0.11",
     "@types/react-modal": "^3.16.0",
-    "@types/uuid": "^9.0.1",
+    "@types/uuid": "^9.0.7",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@vitejs/plugin-react": "^3.1.0",
     "autoprefixer": "^10.4.16",
