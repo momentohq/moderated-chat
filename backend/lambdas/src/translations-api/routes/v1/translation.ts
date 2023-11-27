@@ -53,6 +53,7 @@ type MessageToPublish = {
 }
 
 type CreateTokenRequest = User;
+const profanityFilter = new Filter();
 
 export class TranslationRoute implements IRoute {
     private readonly translateClient: TranslateClient;
@@ -72,7 +73,6 @@ export class TranslationRoute implements IRoute {
         this.signingSecret = props.signingSecret;
     }
     routes(): (api: API) => void {
-        const profanityFilter = new Filter();
         return (api: API): void => {
             api.post('', async (req: Request, res: Response) => {
                 logger.info('received translation request', {
@@ -87,7 +87,7 @@ export class TranslationRoute implements IRoute {
 
                 // try and filter first. This filter does not filter from all languages, but it's a good start
                 const parsedMessage = JSON.parse(body.text) as ParsedMessage;
-                const filteredMessage = profanityFilter.clean(parsedMessage.message ?? '');
+                const filteredMessage = this.filterProfanity(parsedMessage.message ?? '');
 
                 for (const lang of Object.keys(supportedLanguagesMap)) {
                     const translatedMessage = await this.translateMessage({
@@ -238,5 +238,17 @@ export class TranslationRoute implements IRoute {
             truncateFrontToSize: 100,
             ttl: CollectionTtl.refreshTtlIfProvided(fourHoursInSeconds)
         });
+    }
+
+    // The profanity filtering library we are using only works for english words,
+    // and throws errors when trying to filter non-english characters :sad:. This
+    // is here so we only try and run the profanity filter against english chars
+    private filterProfanity = (phrase: string): string => {
+        try {
+            return profanityFilter.clean(phrase);
+        } catch (e) {
+            logger.warn('failed to filter profanity, using unfiltered phrase', { error: e });
+            return phrase;
+        }
     }
 }
