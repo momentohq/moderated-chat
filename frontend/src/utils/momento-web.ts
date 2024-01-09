@@ -14,8 +14,14 @@ export type User = {
   id: string;
 };
 
+export enum MessageType {
+  TEXT = "text",
+  IMAGE = "image",
+}
+
 export type ChatMessageEvent = {
   user: User;
+  messageType: MessageType;
   message: string;
   sourceLanguage: string;
   timestamp: number;
@@ -99,6 +105,7 @@ export async function subscribeToTopic(
 }
 
 async function publish(user: User, targetLanguage: string, message: string) {
+  // console.log("publishing message", message);
   const topicClient = await getWebTopicClient(user);
   const resp = await topicClient.publish(cacheName, topicName, message);
   if (resp instanceof TopicPublish.Error) {
@@ -117,6 +124,7 @@ async function publish(user: User, targetLanguage: string, message: string) {
 
 type SendMessageProps = {
   user: User;
+  messageType: MessageType;
   message: string;
   sourceLanguage: string;
 };
@@ -124,7 +132,9 @@ type SendMessageProps = {
 export async function sendMessage(props: SendMessageProps) {
   const chatMessage: ChatMessageEvent = {
     user: props.user,
-    message: props.message,
+    messageType: props.messageType,
+    message:
+      props.messageType === MessageType.IMAGE ? props.message : props.message,
     sourceLanguage: props.sourceLanguage,
     timestamp: Date.now(),
   };

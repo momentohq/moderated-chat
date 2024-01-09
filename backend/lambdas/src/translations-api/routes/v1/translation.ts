@@ -30,6 +30,7 @@ type Props = {
 }
 
 type ParsedMessage = {
+    messageType: MessageType;
     message: string;
     sourceLanguage: string;
     timestamp: number;
@@ -44,8 +45,12 @@ type TranslationRequest = {
     token_id: string;
     text: string;
 }
-
+enum MessageType {
+    TEXT = 'text',
+    IMAGE = 'image',
+}
 type MessageToPublish = {
+    messageType: MessageType
     message: string;
     sourceLanguage: string;
     timestamp: number;
@@ -90,11 +95,19 @@ export class TranslationRoute implements IRoute {
                 const filteredMessage = this.filterProfanity(parsedMessage.message ?? '');
 
                 for (const lang of Object.keys(supportedLanguagesMap)) {
-                    const translatedMessage = await this.translateMessage({
-                        targetLanguage: lang,
-                        sourceLanguage: parsedMessage.sourceLanguage,
-                        message: filteredMessage
-                    });
+                    let translatedMessage: string;
+                    if (parsedMessage.messageType === MessageType.IMAGE) {
+                        console.log('message is an image, not translating');
+                        translatedMessage = parsedMessage.message;
+                    } else {
+                        console.log('message is text, translating');
+                        translatedMessage = await this.translateMessage({
+                            targetLanguage: lang,
+                            sourceLanguage: parsedMessage.sourceLanguage,
+                            message: filteredMessage
+                        });
+                    }
+
                     await this.publishTranslatedText({
                         user: {
                             username: user.username,
@@ -102,6 +115,7 @@ export class TranslationRoute implements IRoute {
                         },
                         sourceLanguage: lang,
                         message: translatedMessage,
+                        messageType: parsedMessage.messageType,
                         timestamp: parsedMessage.timestamp
                     });
                 }
@@ -109,14 +123,25 @@ export class TranslationRoute implements IRoute {
                 return res.status(200).send({ message: 'success' });
             });
             api.get('latestMessages/:language', async (req: Request, res: Response) => {
+                console.log('received request to get latest messages');
                 if (!(req.params && req.params.language)) {
                     return res.status(400).send({ message: 'missing required path param "language"'});
                 }
                 const listResp = await this.cacheClient.listFetch(this.cache, req.params.language);
                 if (listResp instanceof CacheListFetch.Hit) {
                     const publishedMessages = listResp.valueListString().map(item => {
-                        return JSON.parse(item) as MessageToPublish
+                        const parsedItem = JSON.parse(item) as MessageToPublish;
+                        if (parsedItem.messageType === MessageType.TEXT) {
+                            return parsedItem;
+                        } else {
+                            const decodedImage = Buffer.from(parsedItem.message, 'base64').toString('utf-8');
+                            return {
+                                ...parsedItem,
+                                message: decodedImage,
+                            };
+                        }
                     });
+                    console.log('published messages', publishedMessages);
                     return res.status(200).send({ messages: publishedMessages });
                 } else if (listResp instanceof CacheListFetch.Miss) {
                     return res.status(200).send({ messages: [] });
@@ -209,14 +234,16 @@ export class TranslationRoute implements IRoute {
         });
         return translateResp.TranslatedText ?? '';
     }
-    private publishTranslatedText = async (props: { user: User, timestamp: number, message: string, sourceLanguage: string }) => {
+    private publishTranslatedText = async (props: { user: User, timestamp: number, message: string, messageType: MessageType, sourceLanguage: string }) => {
         const topicName = this.generateTopicName(props.sourceLanguage);
         const messageToSend: MessageToPublish = {
             timestamp: props.timestamp,
+            messageType: props.messageType,
             message: props.message,
             sourceLanguage: props.sourceLanguage,
             user: props.user,
         }
+        console.log('message to send', messageToSend);
         logger.info('publishing translated text to topic', {
             topic: topicName,
             messageToSend,
@@ -238,6 +265,7 @@ export class TranslationRoute implements IRoute {
             truncateFrontToSize: 100,
             ttl: CollectionTtl.refreshTtlIfProvided(fourHoursInSeconds)
         });
+        console.log('successfully published message to cache');
     }
 
     // The profanity filtering library we are using only works for english words,

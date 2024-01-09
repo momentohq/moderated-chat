@@ -28,7 +28,9 @@ class TranslationApi {
         "Content-Type": "application/json",
       },
     });
-    return response.json();
+    const resp = await response.json();
+    console.log("getLatestChats", resp);
+    return resp;
   }
 
   async getSupportedLanguages(): Promise<{
