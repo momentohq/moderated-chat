@@ -105,7 +105,6 @@ export async function subscribeToTopic(
 }
 
 async function publish(user: User, targetLanguage: string, message: string) {
-  // console.log("publishing message", message);
   const topicClient = await getWebTopicClient(user);
   const resp = await topicClient.publish(cacheName, topicName, message);
   if (resp instanceof TopicPublish.Error) {

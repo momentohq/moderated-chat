@@ -5,14 +5,19 @@ import {TranslateClient, TranslateTextCommand} from "@aws-sdk/client-translate";
 import {LanguageOption, supportedLanguagesMap} from "../../../common/utils";
 import {
     AllTopics,
-    AuthClient, CacheClient, CacheListFetch, CollectionTtl,
+    AuthClient,
+    CacheClient,
+    CacheListFetch,
+    CollectionTtl,
     DisposableTokenScopes,
-    ExpiresIn, GenerateDisposableToken,
+    ExpiresIn,
+    GenerateDisposableToken,
     TopicClient,
     TopicPublish
 } from "@gomomento/sdk";
 import Filter from 'bad-words';
 import * as crypto from 'crypto';
+import { Rekognition } from '@aws-sdk/client-rekognition';
 
 type User = {
     id: string;
@@ -92,20 +97,28 @@ export class TranslationRoute implements IRoute {
 
                 // try and filter first. This filter does not filter from all languages, but it's a good start
                 const parsedMessage = JSON.parse(body.text) as ParsedMessage;
-                const filteredMessage = this.filterProfanity(parsedMessage.message ?? '');
 
                 for (const lang of Object.keys(supportedLanguagesMap)) {
                     let translatedMessage: string;
+                    let messageType: MessageType;
                     if (parsedMessage.messageType === MessageType.IMAGE) {
-                        console.log('message is an image, not translating');
-                        translatedMessage = parsedMessage.message;
+                        const isImageSafe = await this.filterImageWithRekognition(parsedMessage.message);
+                        if (!isImageSafe) {
+                            logger.warn('Image contains inappropriate content, skipping translation and publishing.');
+                            translatedMessage = 'Image contains inappropriate content. Cannot publish translation.';
+                            messageType = MessageType.TEXT;
+                        } else {
+                            translatedMessage = parsedMessage.message;
+                            messageType = MessageType.IMAGE;
+                        }
                     } else {
-                        console.log('message is text, translating');
+                        const filteredMessage = this.filterProfanity(parsedMessage.message ?? '');
                         translatedMessage = await this.translateMessage({
                             targetLanguage: lang,
                             sourceLanguage: parsedMessage.sourceLanguage,
                             message: filteredMessage
                         });
+                        messageType = MessageType.TEXT;
                     }
 
                     await this.publishTranslatedText({
@@ -115,7 +128,7 @@ export class TranslationRoute implements IRoute {
                         },
                         sourceLanguage: lang,
                         message: translatedMessage,
-                        messageType: parsedMessage.messageType,
+                        messageType: messageType,
                         timestamp: parsedMessage.timestamp
                     });
                 }
@@ -123,25 +136,14 @@ export class TranslationRoute implements IRoute {
                 return res.status(200).send({ message: 'success' });
             });
             api.get('latestMessages/:language', async (req: Request, res: Response) => {
-                console.log('received request to get latest messages');
                 if (!(req.params && req.params.language)) {
                     return res.status(400).send({ message: 'missing required path param "language"'});
                 }
                 const listResp = await this.cacheClient.listFetch(this.cache, req.params.language);
                 if (listResp instanceof CacheListFetch.Hit) {
                     const publishedMessages = listResp.valueListString().map(item => {
-                        const parsedItem = JSON.parse(item) as MessageToPublish;
-                        if (parsedItem.messageType === MessageType.TEXT) {
-                            return parsedItem;
-                        } else {
-                            const decodedImage = Buffer.from(parsedItem.message, 'base64').toString('utf-8');
-                            return {
-                                ...parsedItem,
-                                message: decodedImage,
-                            };
-                        }
+                        return JSON.parse(item) as MessageToPublish;
                     });
-                    console.log('published messages', publishedMessages);
                     return res.status(200).send({ messages: publishedMessages });
                 } else if (listResp instanceof CacheListFetch.Miss) {
                     return res.status(200).send({ messages: [] });
@@ -243,7 +245,6 @@ export class TranslationRoute implements IRoute {
             sourceLanguage: props.sourceLanguage,
             user: props.user,
         }
-        console.log('message to send', messageToSend);
         logger.info('publishing translated text to topic', {
             topic: topicName,
             messageToSend,
@@ -265,7 +266,6 @@ export class TranslationRoute implements IRoute {
             truncateFrontToSize: 100,
             ttl: CollectionTtl.refreshTtlIfProvided(fourHoursInSeconds)
         });
-        console.log('successfully published message to cache');
     }
 
     // The profanity filtering library we are using only works for english words,
@@ -277,6 +277,28 @@ export class TranslationRoute implements IRoute {
         } catch (e) {
             logger.warn('failed to filter profanity, using unfiltered phrase', { error: e });
             return phrase;
+        }
+    }
+
+    private async filterImageWithRekognition(imageBase64: string): Promise<boolean> {
+        const rekognition = new Rekognition();
+        const params = {
+            Image: {
+                Bytes: Buffer.from(imageBase64, 'base64')
+            },
+        };
+        try {
+            const response = await rekognition.detectModerationLabels(params);
+            const moderationLabels = response.ModerationLabels;
+            if (moderationLabels && moderationLabels.length > 0) {
+                logger.warn('Detected moderation labels:', moderationLabels);
+                // Return false to indicate that the image contains inappropriate content
+                return false;
+            }
+            return true
+        } catch (error) {
+            logger.error('Error during Rekognition processing', { error });
+            return false;
         }
     }
 }

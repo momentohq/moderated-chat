@@ -11,27 +11,12 @@ import translation from "./api/translation";
 import momentoLogoGreen from "./assets/MomentoLogoGreen.svg";
 import md5 from "md5";
 import { debounce } from "lodash";
+import { attachmentIcon } from "./svgs/attachment-icon";
 
 export interface LanguageOption {
   value: string;
   label: string;
 }
-const attachmentIcon = (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    className="h-6 w-6"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-      d="M12 5v14m0 0l-3-3m3 3l3-3M3 7h18a2 2 0 012 2v8a2 2 0 01-2 2H3a2 2 0 01-2-2V9a2 2 0 012-2z"
-    />
-  </svg>
-);
 
 const ChatApp = (props: { user: User }) => {
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
@@ -54,6 +39,7 @@ const ChatApp = (props: { user: User }) => {
   }, [imageInput]);
 
   const closeImagePreview = () => {
+    setImageInput(null);
     setShowImagePreview(false);
   };
 
@@ -71,8 +57,19 @@ const ChatApp = (props: { user: User }) => {
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) {
-      setImageInput(file);
+      const allowedExtensions = ["jpeg", "jpg", "png"];
+      const fileExtension = file.name.split(".").pop()?.toLowerCase();
+
+      if (fileExtension && allowedExtensions.includes(fileExtension)) {
+        setImageInput(file);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } else {
+        alert("Please select a valid image file (JPEG, JPG, or PNG).");
+      }
     }
   };
 
@@ -130,8 +127,7 @@ const ChatApp = (props: { user: User }) => {
 
   const onItem = (item: TopicItem) => {
     try {
-      // console.log("test", item.valueString());
-      // console.log(`listening to: ${selectedLanguage}`);
+      console.log(`listening to: ${selectedLanguage}`);
       const message = JSON.parse(item.valueString()) as ChatMessageEvent;
       setChats((curr) => [...curr, message]);
     } catch (e) {
@@ -152,7 +148,6 @@ const ChatApp = (props: { user: User }) => {
 
   const onSendMessage = async () => {
     if (textInput) {
-      console.log("sending message text", textInput);
       await sendMessage({
         user: props.user,
         messageType: MessageType.TEXT,
@@ -161,11 +156,7 @@ const ChatApp = (props: { user: User }) => {
       });
       setTextInput("");
     } else if (imageInput) {
-      console.log("sending message image", imageInput);
-      // const imageArrayBuffer = await readFileAsArrayBuffer(imageInput);
-      // const uint8Array = new Uint8Array(imageArrayBuffer);
       const imageAsBase64 = await readFileAsBase64(imageInput);
-      console.log("imageAsBase64", imageAsBase64);
       await sendMessage({
         user: props.user,
         messageType: MessageType.IMAGE,
@@ -182,8 +173,13 @@ const ChatApp = (props: { user: User }) => {
       const reader = new FileReader();
       reader.onload = () => {
         if (reader.result && typeof reader.result === "string") {
-          const imageBase64 = reader.result.split(",")[1]; // Get base64 part of the data URL
-          resolve(imageBase64);
+          const [, base64data] =
+            reader.result.match(/data:.*;base64,(.*)/) || [];
+          if (base64data) {
+            resolve(base64data);
+          } else {
+            reject(new Error("Invalid base64 format."));
+          }
         } else {
           reject(new Error("Failed to read file as base64."));
         }
@@ -218,7 +214,6 @@ const ChatApp = (props: { user: User }) => {
     scrollToBottom();
   }, [chats]);
 
-  console.log(chats);
   return (
     <div className="flex h-screen flex-col bg-gradient-to-b from-gray-800 to-black text-white">
       <div className="flex flex-none items-center justify-between bg-gray-900 p-4">
@@ -270,12 +265,11 @@ const ChatApp = (props: { user: User }) => {
                 <div className="text-white">{chat.message}</div>
               ) : (
                 <img
-                  src={`data:image/png;base64,${chat.message}`}
+                  src={`data:image/jpeg;base64,${chat.message}`}
                   alt="Image"
                   className="h-auto max-w-full"
                 />
               )}
-              {/*<div className="text-white">{chat.message}</div>*/}
             </div>
           </div>
         ))}
@@ -290,12 +284,15 @@ const ChatApp = (props: { user: User }) => {
           onChange={(e) => setTextInput(e.target.value)}
           className="mr-2 flex-1 rounded border border-gray-500 bg-gray-800 p-2 text-white focus:outline-none"
         />
-        <div className="ml-2 flex items-center">
+        <div className="group ml-2 flex items-center">
           <button
             onClick={handleImageButtonClick}
-            className="rounded-full bg-gray-800 p-2 text-white transition duration-300 hover:bg-gray-900 focus:outline-none"
+            className="relative mr-3 rounded-full bg-gray-800 p-2 text-white transition duration-300 hover:bg-gray-900 focus:outline-none"
           >
             {attachmentIcon}
+            <span className="absolute bottom-full left-1/2 -translate-x-1/2 -translate-y-2 transform rounded bg-black px-1 text-xs text-white opacity-0 group-hover:opacity-100">
+              Upload an image
+            </span>
           </button>
         </div>
         <button
@@ -315,11 +312,14 @@ const ChatApp = (props: { user: User }) => {
       />
       {showImagePreview && imageInput && (
         <div className="fixed left-0 top-0 flex h-full w-full items-center justify-center bg-black bg-opacity-75">
-          <div className="w-full max-w-md rounded bg-white p-4 shadow-lg">
+          <div className="flex w-full max-w-md flex-col rounded bg-white p-4 shadow-lg">
+            <div className={"mb-2 text-center text-xl font-bold text-black"}>
+              Preview Image
+            </div>
             <img
               src={URL.createObjectURL(imageInput)}
               alt="Image Preview"
-              className="h-auto w-full rounded"
+              className="h-auto max-h-80 w-full rounded"
             />
             <div className="mt-4 flex justify-end">
               <button
