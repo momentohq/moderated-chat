@@ -1,13 +1,14 @@
 import {
   Configurations,
   CredentialProvider,
+  MomentoErrorCode,
   TopicClient,
   type TopicItem,
   TopicPublish,
   TopicSubscribe,
-  MomentoErrorCode,
 } from "@gomomento/sdk-web";
 import TranslationApi from "../api/translation";
+import imageCompression from "browser-image-compression";
 
 export type User = {
   username: string;
@@ -139,3 +140,19 @@ export async function sendMessage(props: SendMessageProps) {
   };
   await publish(props.user, props.sourceLanguage, JSON.stringify(chatMessage));
 }
+
+export const compressImage = async (imageFile: File): Promise<File> => {
+  try {
+    console.log("Compressing image...");
+    const options = {
+      maxSizeMB: 0.07,
+      maxWidthOrHeight: 800,
+      useWebWorker: true,
+    };
+
+    return await imageCompression(imageFile, options);
+  } catch (error) {
+    console.error("Error compressing image:", error);
+    throw error;
+  }
+};

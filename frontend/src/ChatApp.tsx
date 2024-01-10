@@ -1,6 +1,7 @@
 import React, { type ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   type ChatMessageEvent,
+  compressImage,
   MessageType,
   sendMessage,
   subscribeToTopic,
@@ -55,7 +56,7 @@ const ChatApp = (props: { user: User }) => {
     }
   };
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
     if (file) {
@@ -63,7 +64,14 @@ const ChatApp = (props: { user: User }) => {
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
 
       if (fileExtension && allowedExtensions.includes(fileExtension)) {
-        setImageInput(file);
+        try {
+          const compressedFile = await compressImage(file);
+          setImageInput(compressedFile);
+          console.log("compressed image", compressedFile);
+        } catch (error) {
+          console.error("Error compressing image:", error);
+        }
+
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
