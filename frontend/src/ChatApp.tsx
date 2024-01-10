@@ -289,7 +289,9 @@ const ChatApp = (props: { user: User }) => {
                 )}
               </div>
               {chat.messageType === MessageType.TEXT ? (
-                <div className="text-white">{chat.message}</div>
+                <div className="text-white" style={{ whiteSpace: "pre-line" }}>
+                  {chat.message}
+                </div>
               ) : (
                 <img
                   src={`data:image/jpeg;base64,${chat.message}`}

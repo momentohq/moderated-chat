@@ -17,7 +17,20 @@ import {
 } from "@gomomento/sdk";
 import Filter from 'bad-words';
 import * as crypto from 'crypto';
-import { Rekognition } from '@aws-sdk/client-rekognition';
+import {Rekognition} from '@aws-sdk/client-rekognition';
+
+const sentences: string[] = [
+    "The sun is shining brightly.",
+    "I enjoy reading books in the park.",
+    "Coding is a fascinating skill to learn.",
+    "My favorite color is blue.",
+    "Coffee helps me stay awake during work.",
+    "Cats are playful and adorable pets.",
+    "Learning new things is always exciting.",
+    "I like to take long walks in nature.",
+    "Pizza is my go-to comfort food.",
+    "Walking my dog is a daily routine.",
+];
 
 type User = {
     id: string;
@@ -97,6 +110,13 @@ export class TranslationRoute implements IRoute {
 
                 // try and filter first. This filter does not filter from all languages, but it's a good start
                 const parsedMessage = JSON.parse(body.text) as ParsedMessage;
+
+                if (parsedMessage.message.startsWith("/random")) {
+                    parsedMessage.message = sentences[Math.floor(Math.random() * sentences.length)];
+                } else if (parsedMessage.message.startsWith("/stats")) {
+                    const messagesAndUsersInLastHour = await this.getMessagesAndUsersInLastHour(parsedMessage.sourceLanguage);
+                    parsedMessage.message = `Number of messages sent in the last hour: ${messagesAndUsersInLastHour.messages}\nNumber of unique users: ${messagesAndUsersInLastHour.uniqueUsers}`;
+                }
 
                 for (const lang of Object.keys(supportedLanguagesMap)) {
                     let translatedMessage: string;
@@ -318,5 +338,31 @@ export class TranslationRoute implements IRoute {
 
     private async getBase64Image({ imageId } : {imageId: string }): Promise<string> {
         return (await this.cacheClient.get(this.cache, imageId)).value() ?? '';
+    }
+
+    private async getMessagesAndUsersInLastHour(sourceLanguage: string): Promise<{ messages: number, uniqueUsers: number }> {
+        const currentTime = Math.floor(Date.now() / 1000);
+        const oneHourAgo = currentTime - 3600; // 3600 seconds in an hour
+
+        const listResp = await this.cacheClient.listFetch(this.cache, sourceLanguage);
+        if (listResp instanceof CacheListFetch.Hit) {
+            const publishedMessages = listResp.valueListString().map(item => {
+                return JSON.parse(item) as MessageToPublish;
+            });
+
+            const uniqueUsers = new Set<string>();
+            let messagesInLastHour = 0;
+
+            for (const message of publishedMessages) {
+                if (message.timestamp >= oneHourAgo) {
+                    uniqueUsers.add(message.user.id);
+                    messagesInLastHour++;
+                }
+            }
+
+            return { messages: messagesInLastHour, uniqueUsers: uniqueUsers.size };
+        } else {
+            return { messages: 0, uniqueUsers: 0 };
+        }
     }
 }
