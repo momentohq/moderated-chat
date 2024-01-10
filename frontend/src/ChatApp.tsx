@@ -2,7 +2,9 @@ import React, { type ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   type ChatMessageEvent,
   compressImage,
+  getImageMessage,
   MessageType,
+  sendImageMessage,
   sendMessage,
   subscribeToTopic,
   type User,
@@ -13,6 +15,7 @@ import momentoLogoGreen from "./assets/MomentoLogoGreen.svg";
 import md5 from "md5";
 import { debounce } from "lodash";
 import { attachmentIcon } from "./svgs/attachment-icon";
+import { v4 } from "uuid";
 
 export interface LanguageOption {
   value: string;
@@ -30,6 +33,8 @@ const ChatApp = (props: { user: User }) => {
     LanguageOption[]
   >([]);
   const [imageInput, setImageInput] = useState<File | null>(null);
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showImagePreview, setShowImagePreview] = useState(false);
 
@@ -94,9 +99,9 @@ const ChatApp = (props: { user: User }) => {
   const getUsernameColor = (username: string) => {
     if (!usernameColorMap[username]) {
       const hash = md5(username);
-      const r = parseInt(hash.slice(0, 2), 16);
-      const g = parseInt(hash.slice(2, 4), 16);
-      const b = parseInt(hash.slice(4, 6), 16);
+      const r = parseInt(hash.slice(0, 2) as string, 16);
+      const g = parseInt(hash.slice(2, 4) as string, 16);
+      const b = parseInt(hash.slice(4, 6) as string, 16);
       usernameColorMap[username] = `rgb(${r}, ${g}, ${b})`;
     }
 
@@ -133,10 +138,16 @@ const ChatApp = (props: { user: User }) => {
     setSelectedLanguage(selectedValue);
   };
 
-  const onItem = (item: TopicItem) => {
+  const onItem = async (item: TopicItem) => {
     try {
       console.log(`listening to: ${selectedLanguage}`);
       const message = JSON.parse(item.valueString()) as ChatMessageEvent;
+      if (message.messageType === MessageType.IMAGE) {
+        message.message = await getImageMessage({
+          imageId: message.message,
+          user: props.user,
+        });
+      }
       setChats((curr) => [...curr, message]);
     } catch (e) {
       console.error("unable to parse chat message", e);
@@ -165,10 +176,16 @@ const ChatApp = (props: { user: User }) => {
       setTextInput("");
     } else if (imageInput) {
       const imageAsBase64 = await readFileAsBase64(imageInput);
+      const imageId = `image-${v4()}`;
+      await sendImageMessage({
+        imageId,
+        base64Image: imageAsBase64,
+        user: props.user,
+      });
       await sendMessage({
         user: props.user,
         messageType: MessageType.IMAGE,
-        message: imageAsBase64,
+        message: imageId,
         sourceLanguage: selectedLanguage,
       });
       setImageInput(null);
@@ -215,6 +232,8 @@ const ChatApp = (props: { user: User }) => {
   }, [selectedLanguage]);
 
   const scrollToBottom = () => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 

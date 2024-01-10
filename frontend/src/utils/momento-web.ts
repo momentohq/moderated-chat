@@ -3,6 +3,7 @@ import {
   CredentialProvider,
   MomentoErrorCode,
   TopicClient,
+  CacheClient,
   type TopicItem,
   TopicPublish,
   TopicSubscribe,
@@ -29,6 +30,7 @@ export type ChatMessageEvent = {
 };
 
 let webTopicClient: TopicClient | undefined = undefined;
+let webCacheClient: CacheClient | undefined = undefined;
 let subscription: TopicSubscribe.Subscription | undefined = undefined;
 let onItemCb: (item: TopicItem) => void;
 let onErrorCb: (
@@ -38,6 +40,7 @@ let onErrorCb: (
 
 type MomentoClients = {
   topicClient: TopicClient;
+  cacheClient: CacheClient;
 };
 
 const cacheName = "moderator";
@@ -57,9 +60,18 @@ async function getNewWebClients(user: User): Promise<MomentoClients> {
       authToken: tokenResp.token,
     }),
   });
+  const cacheClient = new CacheClient({
+    defaultTtlSeconds: 24 * 60 * 60,
+    configuration: Configurations.Browser.v1(),
+    credentialProvider: CredentialProvider.fromString({
+      authToken: tokenResp.token,
+    }),
+  });
   webTopicClient = topicClient;
+  webCacheClient = cacheClient;
   return {
     topicClient,
+    cacheClient,
   };
 }
 
@@ -76,6 +88,15 @@ async function getWebTopicClient(user: User): Promise<TopicClient> {
 
   const clients = await getNewWebClients(user);
   return clients.topicClient;
+}
+
+async function getWebCacheClient(user: User): Promise<CacheClient> {
+  if (webCacheClient) {
+    return webCacheClient;
+  }
+
+  const clients = await getNewWebClients(user);
+  return clients.cacheClient;
 }
 
 export async function subscribeToTopic(
@@ -139,6 +160,31 @@ export async function sendMessage(props: SendMessageProps) {
     timestamp: Date.now(),
   };
   await publish(props.user, props.sourceLanguage, JSON.stringify(chatMessage));
+}
+
+export async function sendImageMessage({
+  imageId,
+  base64Image,
+  user,
+}: {
+  imageId: string;
+  base64Image: string;
+  user: User;
+}) {
+  const client = await getWebCacheClient(user);
+  await client.set(cacheName, imageId, base64Image);
+}
+
+export async function getImageMessage({
+  imageId,
+  user,
+}: {
+  imageId: string;
+  user: User;
+}): Promise<string> {
+  const client = await getWebCacheClient(user);
+  const resp = await client.get(cacheName, imageId);
+  return resp.value() ?? "";
 }
 
 export const compressImage = async (imageFile: File): Promise<File> => {
