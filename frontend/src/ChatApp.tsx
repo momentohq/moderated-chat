@@ -11,10 +11,11 @@ import {
 } from "./utils/momento-web";
 import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
 import translation from "./api/translation";
-import momentoLogoGreen from "./assets/MomentoLogoGreen.svg";
+import moChatMoPeekUpLogo from "./assets/mochat-mo-peek-up.svg";
 import md5 from "md5";
 import { debounce } from "lodash";
 import { attachmentIcon } from "./svgs/attachment-icon";
+import { moSendIcon } from "./svgs/mo-send-icon";
 import { v4 } from "uuid";
 
 export interface LanguageOption {
@@ -96,15 +97,20 @@ const ChatApp = (props: { user: User }) => {
   };
 
   const usernameColorMap: Record<string, string> = {};
+  const colors = ["#C2B2A9", "#E1D9D5", "#EAF8B6", "#ABE7D2"];
+
   const getUsernameColor = (username: string) => {
     if (!usernameColorMap[username]) {
-      const hash = md5(username);
-      const r = parseInt(hash.slice(0, 2) as string, 16);
-      const g = parseInt(hash.slice(2, 4) as string, 16);
-      const b = parseInt(hash.slice(4, 6) as string, 16);
-      usernameColorMap[username] = `rgb(${r}, ${g}, ${b})`;
+      const storedColor = localStorage.getItem(`${username}_color`);
+      if (storedColor && colors.includes(storedColor)) {
+        usernameColorMap[username] = storedColor;
+      } else {
+        const hash = md5(username);
+        const colorIndex = parseInt(hash.slice(0, 1), 16) % colors.length;
+        usernameColorMap[username] = colors[colorIndex];
+        localStorage.setItem(`${username}_color`, usernameColorMap[username]);
+      }
     }
-
     return usernameColorMap[username];
   };
 
@@ -232,8 +238,6 @@ const ChatApp = (props: { user: User }) => {
   }, [selectedLanguage]);
 
   const scrollToBottom = () => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -242,19 +246,24 @@ const ChatApp = (props: { user: User }) => {
   }, [chats]);
 
   return (
-    <div className="flex h-screen flex-col bg-gradient-to-b from-gray-800 to-black text-white">
-      <div className="flex flex-none items-center justify-between bg-gray-900 p-4">
-        <div className={"flex flex-row space-x-4"}>
+    <div
+      className="flex h-screen flex-col text-white"
+      style={{ background: "radial-gradient(circle, #25392B, #0E2515)" }}
+    >
+      <div className="relative flex h-20 flex-none justify-between bg-green-950">
+        <div className={"flex flex-row space-x-2"}>
           <img
-            src={momentoLogoGreen}
-            className="h-8 w-8"
+            src={moChatMoPeekUpLogo}
+            className="mx-2 mt-2 h-20 w-20"
             alt="Momento logo Green"
           />
-          <h1 className="text-3xl font-bold">Welcome to Momento Chat</h1>
+          <div className={"my-6 font-manrope text-3xl font-bold"}>
+            Welcome to MoChat
+          </div>
         </div>
-        <div className="flex items-center">
+        <div className="mr-5 flex items-center">
           <select
-            className="border-none bg-transparent focus:outline-none"
+            className="rounded-lg border-none bg-transparent shadow focus:border-green-900 focus:outline-none focus:ring-1 focus:ring-green-900"
             value={selectedLanguage}
             onChange={handleLanguageSelect}
           >
@@ -266,19 +275,36 @@ const ChatApp = (props: { user: User }) => {
           </select>
         </div>
       </div>
-      <div className="flex-1 overflow-y-scroll p-4">
+      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-hidden p-4 font-inter hover:overflow-y-auto">
         {chats.map((chat, index) => (
-          <div key={index} className={`mb-2 flex items-start p-2`}>
+          <div key={index} className={`mb-2 flex items-end p-2`}>
             <div
               className="mr-6 flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full"
               style={{ backgroundColor: getUsernameColor(chat.user.id) }}
             >
-              <span className="text-xs font-bold text-white">
+              <span className="text-xs font-bold text-black">
                 {chat.user.username.charAt(0).toUpperCase()}
               </span>
             </div>
-            <div>
-              <div className="mb-1 flex flex-row text-sm text-gray-400">
+            <div
+              className="p-2"
+              style={{
+                whiteSpace: "pre-line",
+                backgroundColor:
+                  chat.user.id === props.user.id ? "#00C88C" : "#E1D9D5",
+                borderRadius: "10px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                maxWidth: "70%",
+                borderBottomLeftRadius: "0",
+              }}
+            >
+              <div
+                className={`mb-1 flex flex-row text-sm ${
+                  chat.user.id === props.user.id
+                    ? "text-white"
+                    : "text-gray-500"
+                }`}
+              >
                 {chat.user.username} -{" "}
                 {new Date(chat.timestamp).toLocaleTimeString([], {
                   hour: "2-digit",
@@ -289,7 +315,12 @@ const ChatApp = (props: { user: User }) => {
                 )}
               </div>
               {chat.messageType === MessageType.TEXT ? (
-                <div className="text-white" style={{ whiteSpace: "pre-line" }}>
+                <div
+                  className="text-green-900"
+                  style={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
                   {chat.message}
                 </div>
               ) : (
@@ -304,33 +335,35 @@ const ChatApp = (props: { user: User }) => {
         ))}
         <div ref={messagesEndRef} />
       </div>
-      <div className="flex items-center bg-gray-700 p-4">
-        <input
-          type="text"
-          placeholder="Type your message..."
-          value={textInput}
-          onKeyDown={onEnterClicked}
-          onChange={(e) => setTextInput(e.target.value)}
-          className="mr-2 flex-1 rounded border border-gray-500 bg-gray-800 p-2 text-white focus:outline-none"
-        />
-        <div className="group ml-2 flex items-center">
+      <div className={"rounded-xl bg-green-950 p-2.5"}>
+        <div className="mx-4 flex items-center">
+          <input
+            type="text"
+            placeholder="Type your message..."
+            value={textInput}
+            onKeyDown={onEnterClicked}
+            onChange={(e) => setTextInput(e.target.value)}
+            className="mr-2 flex-1 rounded-xl border border-green-950 bg-green-950 text-white placeholder-white focus:border-green-900 focus:outline-none focus:ring-1 focus:ring-green-900"
+          />
+          <div className="group ml-2 flex items-center">
+            <button
+              onClick={handleImageButtonClick}
+              className="relative mr-1 rounded p-2 text-black transition duration-300 hover:bg-green-900 focus:outline-none"
+            >
+              {attachmentIcon}
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 -translate-y-2 transform rounded bg-black px-1 text-xs text-white opacity-0 group-hover:opacity-100">
+                Upload an image
+              </span>
+            </button>
+          </div>
           <button
-            onClick={handleImageButtonClick}
-            className="relative mr-3 rounded-full bg-gray-800 p-2 text-white transition duration-300 hover:bg-gray-900 focus:outline-none"
+            onClick={debouncedSendMessage}
+            disabled={!textInput && !imageInput}
+            className="rounded p-2 text-black transition duration-300 hover:bg-green-900 focus:outline-none disabled:cursor-not-allowed disabled:brightness-50"
           >
-            {attachmentIcon}
-            <span className="absolute bottom-full left-1/2 -translate-x-1/2 -translate-y-2 transform rounded bg-black px-1 text-xs text-white opacity-0 group-hover:opacity-100">
-              Upload an image
-            </span>
+            {moSendIcon}
           </button>
         </div>
-        <button
-          onClick={debouncedSendMessage}
-          disabled={!textInput && !imageInput}
-          className="rounded bg-pink-500 p-2 text-white transition duration-300 hover:bg-pink-600 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-500 disabled:brightness-75"
-        >
-          Send
-        </button>
       </div>
       <input
         type="file"

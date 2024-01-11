@@ -12,4 +12,4 @@ rm -f cdk.context.json
 npm i
 npm run build
 
-AWS_PROFILE=dev AWS_REGION=us-west-2 npx cdk deploy --require-approval never
+AWS_PROFILE=matt-dev AWS_REGION=us-west-2 npx cdk deploy --require-approval never
