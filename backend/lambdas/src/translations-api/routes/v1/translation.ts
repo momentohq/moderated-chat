@@ -128,6 +128,7 @@ export class TranslationRoute implements IRoute {
                             logger.warn('Image contains inappropriate content, skipping translation and publishing.');
                             translatedMessage = 'Image contains inappropriate content. Cannot publish translation.';
                             messageType = MessageType.TEXT;
+                            await this.setUnsafeImage({ imageId: parsedMessage.message });
                         } else {
                             translatedMessage = parsedMessage.message;
                             messageType = MessageType.IMAGE;
@@ -162,9 +163,15 @@ export class TranslationRoute implements IRoute {
                 }
                 const listResp = await this.cacheClient.listFetch(this.cache, req.params.language);
                 if (listResp instanceof CacheListFetch.Hit) {
-                    const publishedMessages = listResp.valueListString().map(item => {
-                        return JSON.parse(item) as MessageToPublish;
-                    });
+                    const publishedMessages: MessageToPublish[] = [];
+                    const listValues = listResp.valueListString();
+                    for (const item of listValues) {
+                        const messageToPublish = JSON.parse(item) as MessageToPublish;
+                        if (messageToPublish.messageType === MessageType.IMAGE) {
+                            messageToPublish.message = await this.getBase64Image({imageId: messageToPublish.message});
+                        }
+                        publishedMessages.push(messageToPublish);
+                    }
                     return res.status(200).send({ messages: publishedMessages });
                 } else if (listResp instanceof CacheListFetch.Miss) {
                     return res.status(200).send({ messages: [] });
@@ -338,6 +345,9 @@ export class TranslationRoute implements IRoute {
 
     private async getBase64Image({ imageId } : {imageId: string }): Promise<string> {
         return (await this.cacheClient.get(this.cache, imageId)).value() ?? '';
+    }
+    private async setUnsafeImage({ imageId } : {imageId: string }): Promise<void> {
+        await this.cacheClient.set(this.cache, imageId, 'Image contains inappropriate content. Cannot publish translation.');
     }
 
     private async getMessagesAndUsersInLastHour(sourceLanguage: string): Promise<{ messages: number, uniqueUsers: number }> {
