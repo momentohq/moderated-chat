@@ -7,13 +7,13 @@ import {
     AllTopics,
     AuthClient,
     CacheClient,
-    CacheListFetch,
+    CacheListFetch, CacheRole,
     CollectionTtl,
     DisposableTokenScopes,
     ExpiresIn,
     GenerateDisposableToken,
     TopicClient,
-    TopicPublish
+    TopicPublish, TopicRole
 } from "@gomomento/sdk";
 import Filter from 'bad-words';
 import * as crypto from 'crypto';
@@ -122,7 +122,8 @@ export class TranslationRoute implements IRoute {
                     let translatedMessage: string;
                     let messageType: MessageType;
                     if (parsedMessage.messageType === MessageType.IMAGE) {
-                        const isImageSafe = await this.filterImageWithRekognition(parsedMessage.message);
+                        const image = await this.getBase64Image({imageId: parsedMessage.message});
+                        const isImageSafe = await this.filterImageWithRekognition(image);
                         if (!isImageSafe) {
                             logger.warn('Image contains inappropriate content, skipping translation and publishing.');
                             translatedMessage = 'Image contains inappropriate content. Cannot publish translation.';
@@ -192,9 +193,22 @@ export class TranslationRoute implements IRoute {
                     username: req.body
                 });
                 const parsedBody = req.body as CreateTokenRequest;
-                const publishSubscribeScope = DisposableTokenScopes.topicPublishSubscribe(this.cache, AllTopics);
+                const permissions = {
+                    permissions: [
+                        {
+                            role: CacheRole.ReadWrite,
+                            cache: this.cache,
+                            item: {keyPrefix: "image-"},
+                        },
+                        {
+                            role: TopicRole.PublishSubscribe,
+                            cache: this.cache,
+                            topic: AllTopics,
+                        },
+                    ],
+                }
                 const tokenId = this.generateTokenId(parsedBody);
-                const disposableTokenResp = await this.authClient.generateDisposableToken(publishSubscribeScope, ExpiresIn.minutes(5), { tokenId });
+                const disposableTokenResp = await this.authClient.generateDisposableToken(permissions, ExpiresIn.minutes(5), { tokenId });
                 if (disposableTokenResp instanceof GenerateDisposableToken.Success) {
                     return res.status(200).send({ token: disposableTokenResp.authToken, expiresAtEpoch: disposableTokenResp.expiresAt.epoch() });
                 } else if (disposableTokenResp instanceof GenerateDisposableToken.Error) {
@@ -320,6 +334,10 @@ export class TranslationRoute implements IRoute {
             logger.error('Error during Rekognition processing', { error });
             return false;
         }
+    }
+
+    private async getBase64Image({ imageId } : {imageId: string }): Promise<string> {
+        return (await this.cacheClient.get(this.cache, imageId)).value() ?? '';
     }
 
     private async getMessagesAndUsersInLastHour(sourceLanguage: string): Promise<{ messages: number, uniqueUsers: number }> {
