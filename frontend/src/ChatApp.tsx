@@ -343,7 +343,7 @@ const ChatApp = (props: { user: User }) => {
             value={textInput}
             onKeyDown={onEnterClicked}
             onChange={(e) => setTextInput(e.target.value)}
-            className="mr-2 flex-1 rounded-xl border border-green-950 bg-green-950 text-white placeholder-white focus:border-green-900 focus:outline-none focus:ring-1 focus:ring-green-900"
+            className="mr-2 flex-1 rounded-xl border border-green-900 bg-green-950 text-white placeholder-white focus:border-green-900 focus:outline-none focus:ring-2 focus:ring-green-900"
           />
           <div className="group ml-2 flex items-center">
             <button
