@@ -12,4 +12,4 @@ export const supportedLanguagesMap = {
   hi: "🇮🇳 हिन्दी",
   zh: "🇨🇳 简体中文",
   nl: "🇳🇱 Dutch",
-}
+};

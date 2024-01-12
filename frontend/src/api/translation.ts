@@ -1,5 +1,5 @@
-import { type ChatMessageEvent, type User } from "../utils/momento-web";
 import { type LanguageOption } from "../ChatApp";
+import { type ChatMessageEvent, type User } from "../shared/models";
 
 class TranslationApi {
   private readonly baseUrl =

@@ -1,13 +1,10 @@
 import React, { type ChangeEvent, useEffect, useRef, useState } from "react";
 import {
-  type ChatMessageEvent,
   compressImage,
   getImageMessage,
-  MessageType,
   sendImageMessage,
-  sendMessage,
+  sendTextMessage,
   subscribeToTopic,
-  type User,
 } from "./utils/momento-web";
 import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
 import translation from "./api/translation";
@@ -16,14 +13,16 @@ import md5 from "md5";
 import { debounce } from "lodash";
 import { attachmentIcon } from "./svgs/attachment-icon";
 import { moSendIcon } from "./svgs/mo-send-icon";
-import { v4 } from "uuid";
+import { type ChatMessageEvent, MessageType } from "./shared/models";
+import { getUser } from "./utils/user";
 
 export interface LanguageOption {
   value: string;
   label: string;
 }
 
-const ChatApp = (props: { user: User }) => {
+const ChatApp = () => {
+  const user = getUser();
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
   const [textInput, setTextInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -106,7 +105,8 @@ const ChatApp = (props: { user: User }) => {
         usernameColorMap[username] = storedColor;
       } else {
         const hash = md5(username);
-        const colorIndex = parseInt(hash.slice(0, 1), 16) % colors.length;
+        const colorIndex =
+          parseInt(hash.slice(0, 1) as string, 16) % colors.length;
         usernameColorMap[username] = colors[colorIndex];
         localStorage.setItem(`${username}_color`, usernameColorMap[username]);
       }
@@ -151,7 +151,6 @@ const ChatApp = (props: { user: User }) => {
       if (message.messageType === MessageType.IMAGE) {
         message.message = await getImageMessage({
           imageId: message.message,
-          user: props.user,
         });
       }
       setChats((curr) => [...curr, message]);
@@ -168,13 +167,12 @@ const ChatApp = (props: { user: User }) => {
       "received error from momento, getting new token and resubscribing",
       error,
     );
-    await subscribeToTopic(props.user, selectedLanguage, onItem, onError);
+    await subscribeToTopic(selectedLanguage, onItem, onError);
   };
 
   const onSendMessage = async () => {
     if (textInput) {
-      await sendMessage({
-        user: props.user,
+      await sendTextMessage({
         messageType: MessageType.TEXT,
         message: textInput,
         sourceLanguage: selectedLanguage,
@@ -182,16 +180,8 @@ const ChatApp = (props: { user: User }) => {
       setTextInput("");
     } else if (imageInput) {
       const imageAsBase64 = await readFileAsBase64(imageInput);
-      const imageId = `image-${v4()}`;
       await sendImageMessage({
-        imageId,
         base64Image: imageAsBase64,
-        user: props.user,
-      });
-      await sendMessage({
-        user: props.user,
-        messageType: MessageType.IMAGE,
-        message: imageId,
         sourceLanguage: selectedLanguage,
       });
       setImageInput(null);
@@ -229,7 +219,7 @@ const ChatApp = (props: { user: User }) => {
   };
 
   useEffect(() => {
-    subscribeToTopic(props.user, selectedLanguage, onItem, onError)
+    subscribeToTopic(selectedLanguage, onItem, onError)
       .then(() => {
         console.log("successfully subscribed");
       })
@@ -238,6 +228,8 @@ const ChatApp = (props: { user: User }) => {
   }, [selectedLanguage]);
 
   const scrollToBottom = () => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -291,7 +283,7 @@ const ChatApp = (props: { user: User }) => {
               style={{
                 whiteSpace: "pre-line",
                 backgroundColor:
-                  chat.user.id === props.user.id ? "#00C88C" : "#E1D9D5",
+                  chat.user.id === user.id ? "#00C88C" : "#E1D9D5",
                 borderRadius: "10px",
                 boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
                 maxWidth: "70%",
@@ -300,9 +292,7 @@ const ChatApp = (props: { user: User }) => {
             >
               <div
                 className={`mb-1 flex flex-row text-sm ${
-                  chat.user.id === props.user.id
-                    ? "text-white"
-                    : "text-gray-500"
+                  chat.user.id === user.id ? "text-white" : "text-gray-500"
                 }`}
               >
                 {chat.user.username} -{" "}
@@ -310,7 +300,7 @@ const ChatApp = (props: { user: User }) => {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
-                {props.user.id === chat.user.id && (
+                {user.id === chat.user.id && (
                   <span className={"ml-2 font-bold"}>(You)</span>
                 )}
               </div>
