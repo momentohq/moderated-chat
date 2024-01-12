@@ -287,7 +287,7 @@ const ChatApp = () => {
           </select>
         </div>
       </div>
-      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-hidden p-4 font-inter hover:overflow-y-auto">
+      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-hidden overflow-y-auto p-4 font-inter">
         {chats.map((chat, index) => (
           <div key={index} className={`mb-2 flex items-end p-2`}>
             <div
@@ -298,48 +298,51 @@ const ChatApp = () => {
                 {chat.user.username.charAt(0).toUpperCase()}
               </span>
             </div>
-            <div
-              className="p-2"
-              style={{
-                whiteSpace: "pre-line",
-                backgroundColor:
-                  chat.user.id === user.id ? "#00C88C" : "#E1D9D5",
-                borderRadius: "10px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                maxWidth: "70%",
-                borderBottomLeftRadius: "0",
-              }}
-            >
-              <div
-                className={`mb-1 flex flex-row text-sm ${
-                  chat.user.id === user.id ? "text-white" : "text-gray-500"
-                }`}
-              >
+            <div className={"flex flex-col"}>
+              <div className={"ml-2 text-sm"}>
                 {chat.user.username} -{" "}
                 {new Date(chat.timestamp).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
                 {user.id === chat.user.id && (
-                  <span className={"ml-2 font-bold"}>(You)</span>
+                  <span className={"ml-2"}>(You)</span>
                 )}
               </div>
-              {chat.messageType === MessageType.TEXT ? (
+              <div
+                className="p-2.5"
+                style={{
+                  whiteSpace: "pre-line",
+                  backgroundColor:
+                    chat.user.id === user.id ? "#00C88C" : "#E1D9D5",
+                  borderRadius: "15px",
+                  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                  maxWidth: "70%",
+                  borderBottomLeftRadius: "0",
+                }}
+              >
                 <div
-                  className="text-green-900"
-                  style={{
-                    whiteSpace: "pre-line",
-                  }}
-                >
-                  {chat.message}
-                </div>
-              ) : (
-                <img
-                  src={`data:image/jpeg;base64,${chat.message}`}
-                  alt="Image"
-                  className="h-auto max-w-full"
-                />
-              )}
+                  className={`mb-1 flex flex-row text-sm ${
+                    chat.user.id === user.id ? "text-white" : "text-gray-500"
+                  }`}
+                ></div>
+                {chat.messageType === MessageType.TEXT ? (
+                  <div
+                    className="text-green-900"
+                    style={{
+                      whiteSpace: "pre-line",
+                    }}
+                  >
+                    {chat.message}
+                  </div>
+                ) : (
+                  <img
+                    src={`data:image/jpeg;base64,${chat.message}`}
+                    alt="Image"
+                    className="h-auto max-w-full"
+                  />
+                )}
+              </div>
             </div>
           </div>
         ))}
