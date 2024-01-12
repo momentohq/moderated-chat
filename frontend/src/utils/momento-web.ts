@@ -10,24 +10,9 @@ import {
 } from "@gomomento/sdk-web";
 import TranslationApi from "../api/translation";
 import imageCompression from "browser-image-compression";
-
-export type User = {
-  username: string;
-  id: string;
-};
-
-export enum MessageType {
-  TEXT = "text",
-  IMAGE = "image",
-}
-
-export type ChatMessageEvent = {
-  user: User;
-  messageType: MessageType;
-  message: string;
-  sourceLanguage: string;
-  timestamp: number;
-};
+import { MessageType, type PostMessageEvent } from "../shared/models";
+import { v4 } from "uuid";
+import { getUser } from "./user";
 
 let webTopicClient: TopicClient | undefined = undefined;
 let webCacheClient: CacheClient | undefined = undefined;
@@ -46,12 +31,9 @@ type MomentoClients = {
 const cacheName = "moderator";
 const topicName = "chat-publish";
 
-async function getNewWebClients(user: User): Promise<MomentoClients> {
+async function getNewWebClients(): Promise<MomentoClients> {
+  const user = getUser();
   webTopicClient = undefined;
-  // we don't want to cache the token, since it will expire in 5 min
-  // await fetch(window.location.origin + "/api/momento/token", {
-  //   cache: "no-store",
-  // });
 
   const tokenResp = await TranslationApi.createToken(user);
   const topicClient = new TopicClient({
@@ -81,26 +63,25 @@ const clearCurrentClient = () => {
   webTopicClient = undefined;
 };
 
-async function getWebTopicClient(user: User): Promise<TopicClient> {
+async function getWebTopicClient(): Promise<TopicClient> {
   if (webTopicClient) {
     return webTopicClient;
   }
 
-  const clients = await getNewWebClients(user);
+  const clients = await getNewWebClients();
   return clients.topicClient;
 }
 
-async function getWebCacheClient(user: User): Promise<CacheClient> {
+async function getWebCacheClient(): Promise<CacheClient> {
   if (webCacheClient) {
     return webCacheClient;
   }
 
-  const clients = await getNewWebClients(user);
+  const clients = await getNewWebClients();
   return clients.cacheClient;
 }
 
 export async function subscribeToTopic(
-  user: User,
   languageCode: string,
   onItem: (item: TopicItem) => void,
   onError: (
@@ -109,11 +90,10 @@ export async function subscribeToTopic(
   ) => Promise<void>,
 ) {
   const topic = `chat-${languageCode}`;
-  console.log(`subscribing to topic: ${topic}`);
   clearCurrentClient();
   onErrorCb = onError;
   onItemCb = onItem;
-  const topicClient = await getWebTopicClient(user);
+  const topicClient = await getWebTopicClient();
   const resp = await topicClient.subscribe(cacheName, topic, {
     onItem: onItemCb,
     onError: onErrorCb,
@@ -126,8 +106,8 @@ export async function subscribeToTopic(
   throw new Error(`unable to subscribe to topic: ${resp}`);
 }
 
-async function publish(user: User, targetLanguage: string, message: string) {
-  const topicClient = await getWebTopicClient(user);
+async function publish(targetLanguage: string, message: string) {
+  const topicClient = await getWebTopicClient();
   const resp = await topicClient.publish(cacheName, topicName, message);
   if (resp instanceof TopicPublish.Error) {
     if (resp.errorCode() === MomentoErrorCode.AUTHENTICATION_ERROR) {
@@ -135,8 +115,8 @@ async function publish(user: User, targetLanguage: string, message: string) {
         "token has expired, going to refresh subscription and retry publish",
       );
       clearCurrentClient();
-      await subscribeToTopic(user, targetLanguage, onItemCb, onErrorCb);
-      await publish(user, targetLanguage, message);
+      await subscribeToTopic(targetLanguage, onItemCb, onErrorCb);
+      await publish(targetLanguage, message);
     } else {
       console.error("failed to publish to topic", resp);
     }
@@ -144,52 +124,51 @@ async function publish(user: User, targetLanguage: string, message: string) {
 }
 
 type SendMessageProps = {
-  user: User;
   messageType: MessageType;
   message: string;
   sourceLanguage: string;
 };
 
-export async function sendMessage(props: SendMessageProps) {
-  const chatMessage: ChatMessageEvent = {
-    user: props.user,
+export async function sendTextMessage(props: SendMessageProps) {
+  const chatMessage: PostMessageEvent = {
     messageType: props.messageType,
     message:
       props.messageType === MessageType.IMAGE ? props.message : props.message,
     sourceLanguage: props.sourceLanguage,
     timestamp: Date.now(),
   };
-  await publish(props.user, props.sourceLanguage, JSON.stringify(chatMessage));
+  await publish(props.sourceLanguage, JSON.stringify(chatMessage));
 }
 
 export async function sendImageMessage({
-  imageId,
   base64Image,
-  user,
+  sourceLanguage,
 }: {
-  imageId: string;
   base64Image: string;
-  user: User;
+  sourceLanguage: string;
 }) {
-  const client = await getWebCacheClient(user);
+  const imageId = `image-${v4()}`;
+  const client = await getWebCacheClient();
   await client.set(cacheName, imageId, base64Image);
+  await sendTextMessage({
+    messageType: MessageType.IMAGE,
+    message: imageId,
+    sourceLanguage,
+  });
 }
 
 export async function getImageMessage({
   imageId,
-  user,
 }: {
   imageId: string;
-  user: User;
 }): Promise<string> {
-  const client = await getWebCacheClient(user);
+  const client = await getWebCacheClient();
   const resp = await client.get(cacheName, imageId);
   return resp.value() ?? "";
 }
 
 export const compressImage = async (imageFile: File): Promise<File> => {
   try {
-    console.log("Compressing image...");
     const options = {
       maxSizeMB: 0.07,
       maxWidthOrHeight: 800,

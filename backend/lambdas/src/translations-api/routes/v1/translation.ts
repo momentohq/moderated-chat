@@ -9,15 +9,17 @@ import {
     CacheClient,
     CacheListFetch, CacheRole,
     CollectionTtl,
-    DisposableTokenScopes,
     ExpiresIn,
     GenerateDisposableToken,
     TopicClient,
-    TopicPublish, TopicRole
+    TopicPublish,
+    TopicRole
 } from "@gomomento/sdk";
 import Filter from 'bad-words';
 import * as crypto from 'crypto';
 import {Rekognition} from '@aws-sdk/client-rekognition';
+import {PostMessageEvent} from "../../../../../../shared/models";
+import {ChatMessageEvent, MessageType, User} from "../../../shared/models";
 
 const sentences: string[] = [
     "The sun is shining brightly.",
@@ -32,11 +34,6 @@ const sentences: string[] = [
     "Walking my dog is a daily routine.",
 ];
 
-type User = {
-    id: string;
-    username: string;
-}
-
 type Props = {
     translateClient: TranslateClient;
     topicClient: TopicClient;
@@ -47,13 +44,6 @@ type Props = {
     signingSecret: string;
 }
 
-type ParsedMessage = {
-    messageType: MessageType;
-    message: string;
-    sourceLanguage: string;
-    timestamp: number;
-}
-
 type TranslationRequest = {
     cache: string;
     topic: string;
@@ -62,17 +52,6 @@ type TranslationRequest = {
     topic_sequence_number: number;
     token_id: string;
     text: string;
-}
-enum MessageType {
-    TEXT = 'text',
-    IMAGE = 'image',
-}
-type MessageToPublish = {
-    messageType: MessageType
-    message: string;
-    sourceLanguage: string;
-    timestamp: number;
-    user: User;
 }
 
 type CreateTokenRequest = User;
@@ -109,7 +88,7 @@ export class TranslationRoute implements IRoute {
                 const user = this.getUserFromTokenId(body.token_id);
 
                 // try and filter first. This filter does not filter from all languages, but it's a good start
-                const parsedMessage = JSON.parse(body.text) as ParsedMessage;
+                const parsedMessage = JSON.parse(body.text) as PostMessageEvent;
 
                 if (parsedMessage.message.startsWith("/random")) {
                     parsedMessage.message = sentences[Math.floor(Math.random() * sentences.length)];
@@ -163,10 +142,10 @@ export class TranslationRoute implements IRoute {
                 }
                 const listResp = await this.cacheClient.listFetch(this.cache, req.params.language);
                 if (listResp instanceof CacheListFetch.Hit) {
-                    const publishedMessages: MessageToPublish[] = [];
+                    const publishedMessages: ChatMessageEvent[] = [];
                     const listValues = listResp.valueListString();
                     for (const item of listValues) {
-                        const messageToPublish = JSON.parse(item) as MessageToPublish;
+                        const messageToPublish = JSON.parse(item) as ChatMessageEvent;
                         if (messageToPublish.messageType === MessageType.IMAGE) {
                             messageToPublish.message = await this.getBase64Image({imageId: messageToPublish.message});
                         }
@@ -279,7 +258,7 @@ export class TranslationRoute implements IRoute {
     }
     private publishTranslatedText = async (props: { user: User, timestamp: number, message: string, messageType: MessageType, sourceLanguage: string }) => {
         const topicName = this.generateTopicName(props.sourceLanguage);
-        const messageToSend: MessageToPublish = {
+        const messageToSend: ChatMessageEvent = {
             timestamp: props.timestamp,
             messageType: props.messageType,
             message: props.message,
@@ -357,7 +336,7 @@ export class TranslationRoute implements IRoute {
         const listResp = await this.cacheClient.listFetch(this.cache, sourceLanguage);
         if (listResp instanceof CacheListFetch.Hit) {
             const publishedMessages = listResp.valueListString().map(item => {
-                return JSON.parse(item) as MessageToPublish;
+                return JSON.parse(item) as ChatMessageEvent;
             });
 
             const uniqueUsers = new Set<string>();

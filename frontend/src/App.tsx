@@ -2,14 +2,11 @@ import React, { useState } from "react";
 import ChatApp from "./ChatApp";
 import momentoLogo from "./assets/MomentoLogo.svg";
 import Filter from "bad-words";
-import { v4 } from "uuid";
-import { type User } from "./utils/momento-web";
+import { createUser, doesUserExist } from "./utils/user";
 
 const App: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
-  const storedUser = localStorage.getItem("username-v2");
-  const parsedUser = storedUser ? JSON.parse(storedUser) : null;
-  const [user, setUser] = useState<User>(parsedUser);
+  const [existingUser, setExistingUser] = useState<boolean>(doesUserExist());
   const [error, setError] = useState<string | null>(null);
 
   const profanityFilter = new Filter();
@@ -21,12 +18,8 @@ const App: React.FC = () => {
       if (profanityFilter.isProfane(trimmedValue)) {
         setError("Username contains profanity. Please choose another.");
       } else {
-        const user = {
-          username: trimmedValue,
-          id: v4(),
-        };
-        setUser(user);
-        localStorage.setItem("username-v2", JSON.stringify(user));
+        createUser(trimmedValue);
+        setExistingUser(true);
         setError(null);
       }
     }
@@ -38,7 +31,7 @@ const App: React.FC = () => {
     }
   };
 
-  return !user ? (
+  return !existingUser ? (
     <div
       className="flex h-screen items-center justify-center"
       style={{ background: "radial-gradient(circle, #25392B, #0E2515)" }}
@@ -67,7 +60,7 @@ const App: React.FC = () => {
       </div>
     </div>
   ) : (
-    <ChatApp user={user} />
+    <ChatApp />
   );
 };
 
