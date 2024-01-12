@@ -38,6 +38,13 @@ const ChatApp = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showImagePreview, setShowImagePreview] = useState(false);
 
+  const languageLabelsArray = availableLanguages.map(
+    (language) => language.label,
+  );
+  const availableFlags = languageLabelsArray.map(
+    (label) => label.split(" ")[0],
+  );
+
   useEffect(() => {
     if (imageInput) {
       openImagePreview();
@@ -243,19 +250,21 @@ const ChatApp = () => {
       style={{ background: "radial-gradient(circle, #25392B, #0E2515)" }}
     >
       <div className="relative flex h-20 flex-none justify-between bg-green-950">
-        <div className={"flex flex-row space-x-2"}>
+        <div className={"flex flex-row items-center space-x-2"}>
           <img
             src={moChatMoPeekUpLogo}
             className="mx-2 mt-2 h-20 w-20"
             alt="Momento logo Green"
           />
-          <div className={"my-6 font-manrope text-3xl font-bold"}>
+          <div
+            className={"font-manrope text-xl font-bold sm:text-2xl md:text-3xl"}
+          >
             Welcome to MoChat
           </div>
         </div>
-        <div className="mr-5 flex items-center">
+        <div className="flex items-center md:mr-5">
           <select
-            className="rounded-lg border-none bg-transparent shadow focus:border-green-900 focus:outline-none focus:ring-1 focus:ring-green-900"
+            className="hidden rounded-lg border-none bg-transparent shadow focus:border-green-900 focus:outline-none focus:ring-1 focus:ring-green-900 md:block"
             value={selectedLanguage}
             onChange={handleLanguageSelect}
           >
@@ -265,9 +274,20 @@ const ChatApp = () => {
               </option>
             ))}
           </select>
+          <select
+            className="xs:block rounded-lg border-none bg-transparent shadow focus:border-green-900 focus:outline-none focus:ring-1 focus:ring-green-900 md:hidden"
+            value={selectedLanguage}
+            onChange={handleLanguageSelect}
+          >
+            {availableFlags.map((flag, index) => (
+              <option key={index} value={availableLanguages[index].value}>
+                {flag}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
-      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-hidden p-4 font-inter hover:overflow-y-auto">
+      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-hidden overflow-y-auto p-4 font-inter">
         {chats.map((chat, index) => (
           <div key={index} className={`mb-2 flex items-end p-2`}>
             <div
@@ -278,48 +298,51 @@ const ChatApp = () => {
                 {chat.user.username.charAt(0).toUpperCase()}
               </span>
             </div>
-            <div
-              className="p-2"
-              style={{
-                whiteSpace: "pre-line",
-                backgroundColor:
-                  chat.user.id === user.id ? "#00C88C" : "#E1D9D5",
-                borderRadius: "10px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                maxWidth: "70%",
-                borderBottomLeftRadius: "0",
-              }}
-            >
-              <div
-                className={`mb-1 flex flex-row text-sm ${
-                  chat.user.id === user.id ? "text-white" : "text-gray-500"
-                }`}
-              >
+            <div className={"flex flex-col"}>
+              <div className={"ml-2 text-sm"}>
                 {chat.user.username} -{" "}
                 {new Date(chat.timestamp).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
                 {user.id === chat.user.id && (
-                  <span className={"ml-2 font-bold"}>(You)</span>
+                  <span className={"ml-2"}>(You)</span>
                 )}
               </div>
-              {chat.messageType === MessageType.TEXT ? (
+              <div
+                className="p-2.5"
+                style={{
+                  whiteSpace: "pre-line",
+                  backgroundColor:
+                    chat.user.id === user.id ? "#00C88C" : "#E1D9D5",
+                  borderRadius: "15px",
+                  boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                  maxWidth: "70%",
+                  borderBottomLeftRadius: "0",
+                }}
+              >
                 <div
-                  className="text-green-900"
-                  style={{
-                    whiteSpace: "pre-line",
-                  }}
-                >
-                  {chat.message}
-                </div>
-              ) : (
-                <img
-                  src={`data:image/jpeg;base64,${chat.message}`}
-                  alt="Image"
-                  className="h-auto max-w-full"
-                />
-              )}
+                  className={`mb-1 flex flex-row text-sm ${
+                    chat.user.id === user.id ? "text-white" : "text-gray-500"
+                  }`}
+                ></div>
+                {chat.messageType === MessageType.TEXT ? (
+                  <div
+                    className="text-green-900"
+                    style={{
+                      whiteSpace: "pre-line",
+                    }}
+                  >
+                    {chat.message}
+                  </div>
+                ) : (
+                  <img
+                    src={`data:image/jpeg;base64,${chat.message}`}
+                    alt="Image"
+                    className="h-auto max-w-full"
+                  />
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -335,10 +358,10 @@ const ChatApp = () => {
             onChange={(e) => setTextInput(e.target.value)}
             className="mr-2 flex-1 rounded-xl border border-green-900 bg-green-950 text-white placeholder-white focus:border-green-900 focus:outline-none focus:ring-2 focus:ring-green-900"
           />
-          <div className="group ml-2 flex items-center">
+          <div className="group flex items-center md:ml-2">
             <button
               onClick={handleImageButtonClick}
-              className="relative mr-1 rounded p-2 text-black transition duration-300 hover:bg-green-900 focus:outline-none"
+              className="relative rounded p-2 text-black transition duration-300 hover:bg-green-900 focus:outline-none"
             >
               {attachmentIcon}
               <span className="absolute bottom-full left-1/2 -translate-x-1/2 -translate-y-2 transform rounded bg-black px-1 text-xs text-white opacity-0 group-hover:opacity-100">
@@ -349,7 +372,7 @@ const ChatApp = () => {
           <button
             onClick={debouncedSendMessage}
             disabled={!textInput && !imageInput}
-            className="rounded p-2 text-black transition duration-300 hover:bg-green-900 focus:outline-none disabled:cursor-not-allowed disabled:brightness-50"
+            className="rounded text-black transition duration-300 hover:bg-green-900 focus:outline-none disabled:cursor-not-allowed disabled:brightness-50"
           >
             {moSendIcon}
           </button>
