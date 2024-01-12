@@ -5,14 +5,32 @@ import {TranslateClient, TranslateTextCommand} from "@aws-sdk/client-translate";
 import {LanguageOption, supportedLanguagesMap} from "../../../common/utils";
 import {
     AllTopics,
-    AuthClient, CacheClient, CacheListFetch, CollectionTtl,
+    AuthClient,
+    CacheClient,
+    CacheListFetch, CacheRole,
+    CollectionTtl,
     DisposableTokenScopes,
-    ExpiresIn, GenerateDisposableToken,
+    ExpiresIn,
+    GenerateDisposableToken,
     TopicClient,
-    TopicPublish
+    TopicPublish, TopicRole
 } from "@gomomento/sdk";
 import Filter from 'bad-words';
 import * as crypto from 'crypto';
+import {Rekognition} from '@aws-sdk/client-rekognition';
+
+const sentences: string[] = [
+    "The sun is shining brightly.",
+    "I enjoy reading books in the park.",
+    "Coding is a fascinating skill to learn.",
+    "My favorite color is blue.",
+    "Coffee helps me stay awake during work.",
+    "Cats are playful and adorable pets.",
+    "Learning new things is always exciting.",
+    "I like to take long walks in nature.",
+    "Pizza is my go-to comfort food.",
+    "Walking my dog is a daily routine.",
+];
 
 type User = {
     id: string;
@@ -30,6 +48,7 @@ type Props = {
 }
 
 type ParsedMessage = {
+    messageType: MessageType;
     message: string;
     sourceLanguage: string;
     timestamp: number;
@@ -44,8 +63,12 @@ type TranslationRequest = {
     token_id: string;
     text: string;
 }
-
+enum MessageType {
+    TEXT = 'text',
+    IMAGE = 'image',
+}
 type MessageToPublish = {
+    messageType: MessageType
     message: string;
     sourceLanguage: string;
     timestamp: number;
@@ -87,14 +110,39 @@ export class TranslationRoute implements IRoute {
 
                 // try and filter first. This filter does not filter from all languages, but it's a good start
                 const parsedMessage = JSON.parse(body.text) as ParsedMessage;
-                const filteredMessage = this.filterProfanity(parsedMessage.message ?? '');
+
+                if (parsedMessage.message.startsWith("/random")) {
+                    parsedMessage.message = sentences[Math.floor(Math.random() * sentences.length)];
+                } else if (parsedMessage.message.startsWith("/stats")) {
+                    const messagesAndUsersInLastHour = await this.getMessagesAndUsersInLastHour(parsedMessage.sourceLanguage);
+                    parsedMessage.message = `Number of messages sent in the last hour: ${messagesAndUsersInLastHour.messages}\nNumber of unique users: ${messagesAndUsersInLastHour.uniqueUsers}`;
+                }
 
                 for (const lang of Object.keys(supportedLanguagesMap)) {
-                    const translatedMessage = await this.translateMessage({
-                        targetLanguage: lang,
-                        sourceLanguage: parsedMessage.sourceLanguage,
-                        message: filteredMessage
-                    });
+                    let translatedMessage: string;
+                    let messageType: MessageType;
+                    if (parsedMessage.messageType === MessageType.IMAGE) {
+                        const image = await this.getBase64Image({imageId: parsedMessage.message});
+                        const isImageSafe = await this.filterImageWithRekognition(image);
+                        if (!isImageSafe) {
+                            logger.warn('Image contains inappropriate content, skipping translation and publishing.');
+                            translatedMessage = 'Image contains inappropriate content. Cannot publish translation.';
+                            messageType = MessageType.TEXT;
+                            await this.setUnsafeImage({ imageId: parsedMessage.message });
+                        } else {
+                            translatedMessage = parsedMessage.message;
+                            messageType = MessageType.IMAGE;
+                        }
+                    } else {
+                        const filteredMessage = this.filterProfanity(parsedMessage.message ?? '');
+                        translatedMessage = await this.translateMessage({
+                            targetLanguage: lang,
+                            sourceLanguage: parsedMessage.sourceLanguage,
+                            message: filteredMessage
+                        });
+                        messageType = MessageType.TEXT;
+                    }
+
                     await this.publishTranslatedText({
                         user: {
                             username: user.username,
@@ -102,6 +150,7 @@ export class TranslationRoute implements IRoute {
                         },
                         sourceLanguage: lang,
                         message: translatedMessage,
+                        messageType: messageType,
                         timestamp: parsedMessage.timestamp
                     });
                 }
@@ -114,9 +163,15 @@ export class TranslationRoute implements IRoute {
                 }
                 const listResp = await this.cacheClient.listFetch(this.cache, req.params.language);
                 if (listResp instanceof CacheListFetch.Hit) {
-                    const publishedMessages = listResp.valueListString().map(item => {
-                        return JSON.parse(item) as MessageToPublish
-                    });
+                    const publishedMessages: MessageToPublish[] = [];
+                    const listValues = listResp.valueListString();
+                    for (const item of listValues) {
+                        const messageToPublish = JSON.parse(item) as MessageToPublish;
+                        if (messageToPublish.messageType === MessageType.IMAGE) {
+                            messageToPublish.message = await this.getBase64Image({imageId: messageToPublish.message});
+                        }
+                        publishedMessages.push(messageToPublish);
+                    }
                     return res.status(200).send({ messages: publishedMessages });
                 } else if (listResp instanceof CacheListFetch.Miss) {
                     return res.status(200).send({ messages: [] });
@@ -145,9 +200,22 @@ export class TranslationRoute implements IRoute {
                     username: req.body
                 });
                 const parsedBody = req.body as CreateTokenRequest;
-                const publishSubscribeScope = DisposableTokenScopes.topicPublishSubscribe(this.cache, AllTopics);
+                const permissions = {
+                    permissions: [
+                        {
+                            role: CacheRole.ReadWrite,
+                            cache: this.cache,
+                            item: {keyPrefix: "image-"},
+                        },
+                        {
+                            role: TopicRole.PublishSubscribe,
+                            cache: this.cache,
+                            topic: AllTopics,
+                        },
+                    ],
+                }
                 const tokenId = this.generateTokenId(parsedBody);
-                const disposableTokenResp = await this.authClient.generateDisposableToken(publishSubscribeScope, ExpiresIn.minutes(5), { tokenId });
+                const disposableTokenResp = await this.authClient.generateDisposableToken(permissions, ExpiresIn.minutes(5), { tokenId });
                 if (disposableTokenResp instanceof GenerateDisposableToken.Success) {
                     return res.status(200).send({ token: disposableTokenResp.authToken, expiresAtEpoch: disposableTokenResp.expiresAt.epoch() });
                 } else if (disposableTokenResp instanceof GenerateDisposableToken.Error) {
@@ -209,10 +277,11 @@ export class TranslationRoute implements IRoute {
         });
         return translateResp.TranslatedText ?? '';
     }
-    private publishTranslatedText = async (props: { user: User, timestamp: number, message: string, sourceLanguage: string }) => {
+    private publishTranslatedText = async (props: { user: User, timestamp: number, message: string, messageType: MessageType, sourceLanguage: string }) => {
         const topicName = this.generateTopicName(props.sourceLanguage);
         const messageToSend: MessageToPublish = {
             timestamp: props.timestamp,
+            messageType: props.messageType,
             message: props.message,
             sourceLanguage: props.sourceLanguage,
             user: props.user,
@@ -249,6 +318,61 @@ export class TranslationRoute implements IRoute {
         } catch (e) {
             logger.warn('failed to filter profanity, using unfiltered phrase', { error: e });
             return phrase;
+        }
+    }
+
+    private async filterImageWithRekognition(imageBase64: string): Promise<boolean> {
+        const rekognition = new Rekognition();
+        const params = {
+            Image: {
+                Bytes: Buffer.from(imageBase64, 'base64')
+            },
+        };
+        try {
+            const response = await rekognition.detectModerationLabels(params);
+            const moderationLabels = response.ModerationLabels;
+            if (moderationLabels && moderationLabels.length > 0) {
+                logger.warn('Detected moderation labels:', moderationLabels);
+                // Return false to indicate that the image contains inappropriate content
+                return false;
+            }
+            return true
+        } catch (error) {
+            logger.error('Error during Rekognition processing', { error });
+            return false;
+        }
+    }
+
+    private async getBase64Image({ imageId } : {imageId: string }): Promise<string> {
+        return (await this.cacheClient.get(this.cache, imageId)).value() ?? '';
+    }
+    private async setUnsafeImage({ imageId } : {imageId: string }): Promise<void> {
+        await this.cacheClient.set(this.cache, imageId, 'Image contains inappropriate content. Cannot publish translation.');
+    }
+
+    private async getMessagesAndUsersInLastHour(sourceLanguage: string): Promise<{ messages: number, uniqueUsers: number }> {
+        const currentTime = Math.floor(Date.now() / 1000);
+        const oneHourAgo = currentTime - 3600; // 3600 seconds in an hour
+
+        const listResp = await this.cacheClient.listFetch(this.cache, sourceLanguage);
+        if (listResp instanceof CacheListFetch.Hit) {
+            const publishedMessages = listResp.valueListString().map(item => {
+                return JSON.parse(item) as MessageToPublish;
+            });
+
+            const uniqueUsers = new Set<string>();
+            let messagesInLastHour = 0;
+
+            for (const message of publishedMessages) {
+                if (message.timestamp >= oneHourAgo) {
+                    uniqueUsers.add(message.user.id);
+                    messagesInLastHour++;
+                }
+            }
+
+            return { messages: messagesInLastHour, uniqueUsers: uniqueUsers.size };
+        } else {
+            return { messages: 0, uniqueUsers: 0 };
         }
     }
 }

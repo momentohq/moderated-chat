@@ -18,6 +18,10 @@ module.exports = {
           1000: '#07130B',
         }
       },
+      fontFamily: {
+        manrope: ['Manrope-Extrabold', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
+      },
     },
   },
   plugins: [

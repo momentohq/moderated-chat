@@ -1,27 +1,36 @@
 import {
   Configurations,
   CredentialProvider,
+  MomentoErrorCode,
   TopicClient,
+  CacheClient,
   type TopicItem,
   TopicPublish,
   TopicSubscribe,
-  MomentoErrorCode,
 } from "@gomomento/sdk-web";
 import TranslationApi from "../api/translation";
+import imageCompression from "browser-image-compression";
 
 export type User = {
   username: string;
   id: string;
 };
 
+export enum MessageType {
+  TEXT = "text",
+  IMAGE = "image",
+}
+
 export type ChatMessageEvent = {
   user: User;
+  messageType: MessageType;
   message: string;
   sourceLanguage: string;
   timestamp: number;
 };
 
 let webTopicClient: TopicClient | undefined = undefined;
+let webCacheClient: CacheClient | undefined = undefined;
 let subscription: TopicSubscribe.Subscription | undefined = undefined;
 let onItemCb: (item: TopicItem) => void;
 let onErrorCb: (
@@ -31,6 +40,7 @@ let onErrorCb: (
 
 type MomentoClients = {
   topicClient: TopicClient;
+  cacheClient: CacheClient;
 };
 
 const cacheName = "moderator";
@@ -50,9 +60,18 @@ async function getNewWebClients(user: User): Promise<MomentoClients> {
       authToken: tokenResp.token,
     }),
   });
+  const cacheClient = new CacheClient({
+    defaultTtlSeconds: 24 * 60 * 60,
+    configuration: Configurations.Browser.v1(),
+    credentialProvider: CredentialProvider.fromString({
+      authToken: tokenResp.token,
+    }),
+  });
   webTopicClient = topicClient;
+  webCacheClient = cacheClient;
   return {
     topicClient,
+    cacheClient,
   };
 }
 
@@ -69,6 +88,15 @@ async function getWebTopicClient(user: User): Promise<TopicClient> {
 
   const clients = await getNewWebClients(user);
   return clients.topicClient;
+}
+
+async function getWebCacheClient(user: User): Promise<CacheClient> {
+  if (webCacheClient) {
+    return webCacheClient;
+  }
+
+  const clients = await getNewWebClients(user);
+  return clients.cacheClient;
 }
 
 export async function subscribeToTopic(
@@ -117,6 +145,7 @@ async function publish(user: User, targetLanguage: string, message: string) {
 
 type SendMessageProps = {
   user: User;
+  messageType: MessageType;
   message: string;
   sourceLanguage: string;
 };
@@ -124,9 +153,52 @@ type SendMessageProps = {
 export async function sendMessage(props: SendMessageProps) {
   const chatMessage: ChatMessageEvent = {
     user: props.user,
-    message: props.message,
+    messageType: props.messageType,
+    message:
+      props.messageType === MessageType.IMAGE ? props.message : props.message,
     sourceLanguage: props.sourceLanguage,
     timestamp: Date.now(),
   };
   await publish(props.user, props.sourceLanguage, JSON.stringify(chatMessage));
 }
+
+export async function sendImageMessage({
+  imageId,
+  base64Image,
+  user,
+}: {
+  imageId: string;
+  base64Image: string;
+  user: User;
+}) {
+  const client = await getWebCacheClient(user);
+  await client.set(cacheName, imageId, base64Image);
+}
+
+export async function getImageMessage({
+  imageId,
+  user,
+}: {
+  imageId: string;
+  user: User;
+}): Promise<string> {
+  const client = await getWebCacheClient(user);
+  const resp = await client.get(cacheName, imageId);
+  return resp.value() ?? "";
+}
+
+export const compressImage = async (imageFile: File): Promise<File> => {
+  try {
+    console.log("Compressing image...");
+    const options = {
+      maxSizeMB: 0.07,
+      maxWidthOrHeight: 800,
+      useWebWorker: true,
+    };
+
+    return await imageCompression(imageFile, options);
+  } catch (error) {
+    console.error("Error compressing image:", error);
+    throw error;
+  }
+};

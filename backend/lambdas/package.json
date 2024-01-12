@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-comprehend": "^3.454.0",
+    "@aws-sdk/client-rekognition": "^3.485.0",
     "@aws-sdk/client-secrets-manager": "3.451.0",
     "@aws-sdk/client-translate": "^3.451.0",
     "@gomomento/sdk": "1.51.1",

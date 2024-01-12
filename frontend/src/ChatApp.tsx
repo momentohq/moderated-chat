@@ -1,20 +1,28 @@
 import React, { type ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   type ChatMessageEvent,
+  compressImage,
+  getImageMessage,
+  MessageType,
+  sendImageMessage,
   sendMessage,
   subscribeToTopic,
   type User,
 } from "./utils/momento-web";
 import { type TopicItem, type TopicSubscribe } from "@gomomento/sdk-web";
 import translation from "./api/translation";
-import momentoLogoGreen from "./assets/MomentoLogoGreen.svg";
+import moChatMoPeekUpLogo from "./assets/mochat-mo-peek-up.svg";
 import md5 from "md5";
 import { debounce } from "lodash";
+import { attachmentIcon } from "./svgs/attachment-icon";
+import { moSendIcon } from "./svgs/mo-send-icon";
+import { v4 } from "uuid";
 
 export interface LanguageOption {
   value: string;
   label: string;
 }
+
 const ChatApp = (props: { user: User }) => {
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
   const [textInput, setTextInput] = useState("");
@@ -25,17 +33,84 @@ const ChatApp = (props: { user: User }) => {
   const [availableLanguages, setAvailableLanguages] = useState<
     LanguageOption[]
   >([]);
+  const [imageInput, setImageInput] = useState<File | null>(null);
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showImagePreview, setShowImagePreview] = useState(false);
+
+  useEffect(() => {
+    if (imageInput) {
+      openImagePreview();
+    }
+  }, [imageInput]);
+
+  const closeImagePreview = () => {
+    setImageInput(null);
+    setShowImagePreview(false);
+  };
+
+  const openImagePreview = () => {
+    if (imageInput) {
+      setShowImagePreview(true);
+    }
+  };
+
+  const handleImageButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    if (file) {
+      const allowedExtensions = ["jpeg", "jpg", "png"];
+      const fileExtension = file.name.split(".").pop()?.toLowerCase();
+
+      if (fileExtension && allowedExtensions.includes(fileExtension)) {
+        try {
+          const compressedFile = await compressImage(file);
+          setImageInput(compressedFile);
+          console.log("compressed image", compressedFile);
+        } catch (error) {
+          console.error("Error compressing image:", error);
+        }
+
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } else {
+        alert("Please select a valid image file (JPEG, JPG, or PNG).");
+      }
+    }
+  };
+
+  const handleImageCancel = () => {
+    setImageInput(null);
+    setShowImagePreview(false);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const usernameColorMap: Record<string, string> = {};
+  const colors = ["#C2B2A9", "#E1D9D5", "#EAF8B6", "#ABE7D2"];
+
   const getUsernameColor = (username: string) => {
     if (!usernameColorMap[username]) {
-      const hash = md5(username);
-      const r = parseInt(hash.slice(0, 2), 16);
-      const g = parseInt(hash.slice(2, 4), 16);
-      const b = parseInt(hash.slice(4, 6), 16);
-      usernameColorMap[username] = `rgb(${r}, ${g}, ${b})`;
+      const storedColor = localStorage.getItem(`${username}_color`);
+      if (storedColor && colors.includes(storedColor)) {
+        usernameColorMap[username] = storedColor;
+      } else {
+        const hash = md5(username);
+        const colorIndex = parseInt(hash.slice(0, 1), 16) % colors.length;
+        usernameColorMap[username] = colors[colorIndex];
+        localStorage.setItem(`${username}_color`, usernameColorMap[username]);
+      }
     }
-
     return usernameColorMap[username];
   };
 
@@ -69,11 +144,16 @@ const ChatApp = (props: { user: User }) => {
     setSelectedLanguage(selectedValue);
   };
 
-  const onItem = (item: TopicItem) => {
+  const onItem = async (item: TopicItem) => {
     try {
-      console.log("test", item.valueString());
       console.log(`listening to: ${selectedLanguage}`);
       const message = JSON.parse(item.valueString()) as ChatMessageEvent;
+      if (message.messageType === MessageType.IMAGE) {
+        message.message = await getImageMessage({
+          imageId: message.message,
+          user: props.user,
+        });
+      }
       setChats((curr) => [...curr, message]);
     } catch (e) {
       console.error("unable to parse chat message", e);
@@ -92,12 +172,52 @@ const ChatApp = (props: { user: User }) => {
   };
 
   const onSendMessage = async () => {
-    await sendMessage({
-      user: props.user,
-      message: textInput,
-      sourceLanguage: selectedLanguage,
+    if (textInput) {
+      await sendMessage({
+        user: props.user,
+        messageType: MessageType.TEXT,
+        message: textInput,
+        sourceLanguage: selectedLanguage,
+      });
+      setTextInput("");
+    } else if (imageInput) {
+      const imageAsBase64 = await readFileAsBase64(imageInput);
+      const imageId = `image-${v4()}`;
+      await sendImageMessage({
+        imageId,
+        base64Image: imageAsBase64,
+        user: props.user,
+      });
+      await sendMessage({
+        user: props.user,
+        messageType: MessageType.IMAGE,
+        message: imageId,
+        sourceLanguage: selectedLanguage,
+      });
+      setImageInput(null);
+      closeImagePreview();
+    }
+  };
+
+  const readFileAsBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result && typeof reader.result === "string") {
+          const [, base64data] =
+            reader.result.match(/data:.*;base64,(.*)/) || [];
+          if (base64data) {
+            resolve(base64data);
+          } else {
+            reject(new Error("Invalid base64 format."));
+          }
+        } else {
+          reject(new Error("Failed to read file as base64."));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
-    setTextInput("");
   };
 
   const debouncedSendMessage = debounce(onSendMessage, 500);
@@ -126,19 +246,24 @@ const ChatApp = (props: { user: User }) => {
   }, [chats]);
 
   return (
-    <div className="flex h-screen flex-col bg-gradient-to-b from-gray-800 to-black text-white">
-      <div className="flex flex-none items-center justify-between bg-gray-900 p-4">
-        <div className={"flex flex-row space-x-4"}>
+    <div
+      className="flex h-screen flex-col text-white"
+      style={{ background: "radial-gradient(circle, #25392B, #0E2515)" }}
+    >
+      <div className="relative flex h-20 flex-none justify-between bg-green-950">
+        <div className={"flex flex-row space-x-2"}>
           <img
-            src={momentoLogoGreen}
-            className="h-8 w-8"
+            src={moChatMoPeekUpLogo}
+            className="mx-2 mt-2 h-20 w-20"
             alt="Momento logo Green"
           />
-          <h1 className="text-3xl font-bold">Welcome to Momento Chat</h1>
+          <div className={"my-6 font-manrope text-3xl font-bold"}>
+            Welcome to MoChat
+          </div>
         </div>
-        <div className="flex items-center">
+        <div className="mr-5 flex items-center">
           <select
-            className="border-none bg-transparent focus:outline-none"
+            className="rounded-lg border-none bg-transparent shadow focus:border-green-900 focus:outline-none focus:ring-1 focus:ring-green-900"
             value={selectedLanguage}
             onChange={handleLanguageSelect}
           >
@@ -150,19 +275,36 @@ const ChatApp = (props: { user: User }) => {
           </select>
         </div>
       </div>
-      <div className="flex-1 overflow-y-scroll p-4">
+      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-hidden p-4 font-inter hover:overflow-y-auto">
         {chats.map((chat, index) => (
-          <div key={index} className={`mb-2 flex items-start p-2`}>
+          <div key={index} className={`mb-2 flex items-end p-2`}>
             <div
               className="mr-6 flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full"
               style={{ backgroundColor: getUsernameColor(chat.user.id) }}
             >
-              <span className="text-xs font-bold text-white">
+              <span className="text-xs font-bold text-black">
                 {chat.user.username.charAt(0).toUpperCase()}
               </span>
             </div>
-            <div>
-              <div className="mb-1 flex flex-row text-sm text-gray-400">
+            <div
+              className="p-2"
+              style={{
+                whiteSpace: "pre-line",
+                backgroundColor:
+                  chat.user.id === props.user.id ? "#00C88C" : "#E1D9D5",
+                borderRadius: "10px",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                maxWidth: "70%",
+                borderBottomLeftRadius: "0",
+              }}
+            >
+              <div
+                className={`mb-1 flex flex-row text-sm ${
+                  chat.user.id === props.user.id
+                    ? "text-white"
+                    : "text-gray-500"
+                }`}
+              >
                 {chat.user.username} -{" "}
                 {new Date(chat.timestamp).toLocaleTimeString([], {
                   hour: "2-digit",
@@ -172,29 +314,92 @@ const ChatApp = (props: { user: User }) => {
                   <span className={"ml-2 font-bold"}>(You)</span>
                 )}
               </div>
-              <div className="text-white">{chat.message}</div>
+              {chat.messageType === MessageType.TEXT ? (
+                <div
+                  className="text-green-900"
+                  style={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {chat.message}
+                </div>
+              ) : (
+                <img
+                  src={`data:image/jpeg;base64,${chat.message}`}
+                  alt="Image"
+                  className="h-auto max-w-full"
+                />
+              )}
             </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
-      <div className="flex items-center bg-gray-700 p-4">
-        <input
-          type="text"
-          placeholder="Type your message..."
-          value={textInput}
-          onKeyDown={onEnterClicked}
-          onChange={(e) => setTextInput(e.target.value)}
-          className="mr-2 flex-1 rounded border border-gray-500 bg-gray-800 p-2 text-white focus:outline-none"
-        />
-        <button
-          onClick={debouncedSendMessage}
-          disabled={!textInput}
-          className="rounded bg-pink-500 p-2 text-white transition duration-300 hover:bg-pink-600 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-500 disabled:brightness-75"
-        >
-          Send
-        </button>
+      <div className={"rounded-xl bg-green-950 p-2.5"}>
+        <div className="mx-4 flex items-center">
+          <input
+            type="text"
+            placeholder="Type your message..."
+            value={textInput}
+            onKeyDown={onEnterClicked}
+            onChange={(e) => setTextInput(e.target.value)}
+            className="mr-2 flex-1 rounded-xl border border-green-900 bg-green-950 text-white placeholder-white focus:border-green-900 focus:outline-none focus:ring-2 focus:ring-green-900"
+          />
+          <div className="group ml-2 flex items-center">
+            <button
+              onClick={handleImageButtonClick}
+              className="relative mr-1 rounded p-2 text-black transition duration-300 hover:bg-green-900 focus:outline-none"
+            >
+              {attachmentIcon}
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 -translate-y-2 transform rounded bg-black px-1 text-xs text-white opacity-0 group-hover:opacity-100">
+                Upload an image
+              </span>
+            </button>
+          </div>
+          <button
+            onClick={debouncedSendMessage}
+            disabled={!textInput && !imageInput}
+            className="rounded p-2 text-black transition duration-300 hover:bg-green-900 focus:outline-none disabled:cursor-not-allowed disabled:brightness-50"
+          >
+            {moSendIcon}
+          </button>
+        </div>
       </div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleImageChange}
+        className="hidden"
+        ref={fileInputRef}
+      />
+      {showImagePreview && imageInput && (
+        <div className="fixed left-0 top-0 flex h-full w-full items-center justify-center bg-black bg-opacity-75">
+          <div className="flex w-full max-w-md flex-col rounded bg-white p-4 shadow-lg">
+            <div className={"mb-2 text-center text-xl font-bold text-black"}>
+              Preview Image
+            </div>
+            <img
+              src={URL.createObjectURL(imageInput)}
+              alt="Image Preview"
+              className="h-auto max-h-80 w-full rounded"
+            />
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={onSendMessage}
+                className="rounded-full bg-pink-500 p-2 text-white transition duration-300 hover:bg-pink-600 focus:outline-none"
+              >
+                Send
+              </button>
+              <button
+                onClick={handleImageCancel}
+                className="ml-2 rounded-full bg-gray-500 p-2 text-white transition duration-300 hover:bg-gray-600 focus:outline-none"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
