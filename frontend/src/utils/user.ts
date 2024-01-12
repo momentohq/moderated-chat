@@ -5,7 +5,10 @@ const usernameLocalStorageKey = "username-v2";
 
 export const getUser = (): User => {
   const storedUser = localStorage.getItem(usernameLocalStorageKey);
-  return JSON.parse(storedUser);
+  if (!storedUser) {
+    throw new Error("User not found");
+  }
+  return JSON.parse(storedUser) as User;
 };
 
 export const createUser = (username: string) => {
