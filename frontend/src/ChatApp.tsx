@@ -317,8 +317,9 @@ const ChatApp = () => {
                     chat.user.id === user.id ? "#00C88C" : "#E1D9D5",
                   borderRadius: "15px",
                   boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                  maxWidth: "70%",
                   borderBottomLeftRadius: "0",
+                  maxWidth: "70%",
+                  overflowWrap: "break-word",
                 }}
               >
                 <div
@@ -327,14 +328,7 @@ const ChatApp = () => {
                   }`}
                 ></div>
                 {chat.messageType === MessageType.TEXT ? (
-                  <div
-                    className="text-green-900"
-                    style={{
-                      whiteSpace: "pre-line",
-                    }}
-                  >
-                    {chat.message}
-                  </div>
+                  <div className="text-green-900">{chat.message}</div>
                 ) : (
                   <img
                     src={`data:image/jpeg;base64,${chat.message}`}
