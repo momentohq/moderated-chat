@@ -1,6 +1,6 @@
 # Moderated Chat
 
-This application uses Momento Webhooks to build a moderated, multi-language chat application. Users can chat with each other in multiple langauges at the same time, with profanity filtered out. This repository is structured as a mono repo, with our frontend, backend, and infrastructure code separated by folders. The folder structure is as follows
+This application uses Momento Webhooks to build a moderated, multi-language chat application. Users can chat with each other in multiple languages at the same time, with profanity filtered out. This repository is structured as a mono repo, with our frontend, backend, and infrastructure code separated by folders. The folder structure is as follows
 
 ```
 ├── backend
@@ -51,7 +51,7 @@ In order to run these apis, there needs to be a secret stored in aws secrets man
   webhookSigningSecret: "",
 }
 ```
-- the `momentoApiKey` is a token, which can be created via the [momento console](https://console.gomomento.com/api-keys), with super user permissions. This token will be used to vend short lived publish/subscribe api keys to the frontend
+- the `momentoApiKey` is a token, which can be created via the [Momento Console](https://console.gomomento.com/api-keys), with super user permissions. This token will be used to vend short lived publish/subscribe api keys to the frontend
 - the `webhookSigningSecret` is the signing secret associated with the Momento Webhook. It is used to validate that requests are coming from Momento
 
 
