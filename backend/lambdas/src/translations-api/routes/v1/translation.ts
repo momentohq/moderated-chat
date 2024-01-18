@@ -105,7 +105,11 @@ export class TranslationRoute implements IRoute {
                         const isImageSafe = await this.filterImageWithRekognition(image);
                         if (!isImageSafe) {
                             logger.warn('Image contains inappropriate content, skipping translation and publishing.');
-                            translatedMessage = 'Image contains inappropriate content. Cannot publish translation.';
+                            translatedMessage = await this.translateMessage({
+                                targetLanguage: lang,
+                                sourceLanguage: parsedMessage.sourceLanguage,
+                                message: "Image contains inappropriate content. Cannot publish translation."
+                            });
                             messageType = MessageType.TEXT;
                             await this.setUnsafeImage({ imageId: parsedMessage.message });
                         } else {
