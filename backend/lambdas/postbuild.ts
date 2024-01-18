@@ -1,20 +1,20 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import {execSync} from 'child_process';
+import * as fs from "fs";
+import * as path from "path";
+import { execSync } from "child_process";
 
-const functionsDir = 'src';
+const functionsDir = "src";
 fs.readdirSync(path.join(__dirname, functionsDir))
-  .filter(entry => entry !== 'common')
-  .map(entry => {
+  .filter((entry) => entry !== "common")
+  .filter((entry) => entry !== "shared")
+  .map((entry) => {
     const commands = [
-      'ls -lah',
+      "ls -lah",
       `pushd dist/${entry}`,
       `echo "zipping ${entry} lambda"`,
       `zip -R ${entry}.zip *.js`,
-      'popd',
+      "popd",
     ];
-    execSync(commands.join(' && '), {
-      stdio: 'inherit',
+    execSync(commands.join(" && "), {
+      stdio: "inherit",
     });
   });
-

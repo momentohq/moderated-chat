@@ -7,13 +7,18 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import * as secrets from 'aws-cdk-lib/aws-secretsmanager';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import {Effect, PolicyStatement} from "aws-cdk-lib/aws-iam";
+import * as route53 from "aws-cdk-lib/aws-route53";
+import * as certmgr from "aws-cdk-lib/aws-certificatemanager";
+import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 
 export interface TranslationApiStackProps {
     isDevDeploy: boolean;
+    apiDomain: string;
+    apiSubdomain: string;
 }
 
 export class TranslationApiStack extends cdk.Stack {
-    private readonly restApi: apigw.RestApi;
+    readonly restApi: apigw.RestApi;
     constructor(
         scope: cdk.App,
         id: string,
@@ -32,10 +37,23 @@ export class TranslationApiStack extends cdk.Stack {
                 ? RemovalPolicy.DESTROY
                 : RemovalPolicy.RETAIN,
         });
+        // Register the subdomain and create a certificate for it
+        const hostedZone = route53.HostedZone.fromLookup(
+            this,
+            'chat-api-hosted-zone',
+            {
+                domainName: props.apiDomain,
+            }
+        );
+        const certificate = new certmgr.Certificate(this, 'chat-api-cert', {
+            domainName: `${props.apiSubdomain}.${props.apiDomain}`,
+            validation: certmgr.CertificateValidation.fromDns(hostedZone),
+        });
         const defaultRestApiProps: apigw.RestApiProps = {
             restApiName,
             endpointTypes: [apigw.EndpointType.REGIONAL],
             deploy: true,
+            description: "Rest api that contains the backend code/logic for the moderated chat demo",
             deployOptions: {
                 stageName: 'prod',
                 accessLogDestination: new apigw.LogGroupLogDestination(logGroup),
@@ -51,10 +69,24 @@ export class TranslationApiStack extends cdk.Stack {
                 allowHeaders: apigw.Cors.DEFAULT_HEADERS,
                 allowMethods: apigw.Cors.ALL_METHODS,
             },
+            domainName: {
+                domainName: `${props.apiSubdomain}.${props.apiDomain}`,
+                endpointType: apigw.EndpointType.REGIONAL,
+                certificate,
+            }
         };
 
         this.restApi = new apigw.RestApi(this, 'rest-api', {
             ...defaultRestApiProps,
+        });
+
+        new route53.ARecord(this, "rest-api-dns", {
+            zone: hostedZone,
+            recordName: props.apiSubdomain,
+            comment: "This is the A Record used for the moderated chat api backend",
+            target: route53.RecordTarget.fromAlias(
+                new route53Targets.ApiGateway(this.restApi)
+            ),
         });
 
         const secretsPath = 'moderator/demo/secrets';

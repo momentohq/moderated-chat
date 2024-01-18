@@ -12,4 +12,7 @@ rm -f cdk.context.json
 npm i
 npm run build
 
-AWS_PROFILE=matt-dev AWS_REGION=us-west-2 npx cdk deploy --require-approval never
+# Default to using matt's dev environment
+export API_DOMAIN=${API_DOMAIN:-developer-mst-dev.preprod.a.momentohq.com}
+
+AWS_PROFILE=dev AWS_REGION=us-west-2 npx cdk deploy --require-approval never

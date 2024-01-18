@@ -3,7 +3,7 @@ import { type ChatMessageEvent, type User } from "../shared/models";
 
 class TranslationApi {
   private readonly baseUrl =
-    "https://57zovcekn0.execute-api.us-west-2.amazonaws.com/prod";
+    "https://chat-api.developer-mst-dev.preprod.a.momentohq.com";
   async createToken(
     user: User,
   ): Promise<{ token: string; expiresAtEpoch: number }> {

@@ -3,6 +3,20 @@ import {GetCallerIdentityCommand, STSClient} from '@aws-sdk/client-sts';
 import {TranslationApiStack} from "../lib/translation-api";
 
 async function main() {
+    // read from environment variable or panic
+    const apiDomain: string | undefined = process.env.API_DOMAIN;
+    if (apiDomain === undefined) {
+        throw new Error('API_DOMAIN environment variable must be set');
+    }
+
+    let apiSubdomain: string | undefined = process.env.API_SUBDOMAIN;
+    if (apiSubdomain === undefined) {
+        console.log(
+            'API_SUBDOMAIN environment variable not set, using "chat-api"'
+        );
+        apiSubdomain = 'chat-api';
+    }
+
     const stsClient = new STSClient({});
     const command = new GetCallerIdentityCommand({});
     let stsResponse;
@@ -34,6 +48,8 @@ async function main() {
         `translation-api-stack-preprod`,
         {
             isDevDeploy: Boolean(process.env.IS_DEV_DEPLOY),
+            apiDomain,
+            apiSubdomain,
         },
         {env: stackEnv}
     );
