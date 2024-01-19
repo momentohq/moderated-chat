@@ -177,7 +177,8 @@ const ChatApp = () => {
     await subscribeToTopic(selectedLanguage, onItem, onError);
   };
 
-  const onSendMessage = async () => {
+  const onSendMessage = async (event: Event) => {
+    event.preventDefault();
     if (textInput) {
       await sendTextMessage({
         messageType: MessageType.TEXT,
@@ -287,7 +288,7 @@ const ChatApp = () => {
           </select>
         </div>
       </div>
-      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-hidden overflow-y-auto p-4 font-inter">
+      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-y-auto p-4 font-inter">
         {chats.map((chat, index) => (
           <div key={index} className={`mb-2 flex items-end p-2`}>
             <div
