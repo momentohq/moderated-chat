@@ -1,4 +1,4 @@
-import React, { type ChangeEvent, useEffect, useRef, useState } from "react";
+import React, {type ChangeEvent, MouseEventHandler, useEffect, useLayoutEffect, useRef, useState} from "react";
 import {
   compressImage,
   getImageMessage,
@@ -37,6 +37,7 @@ const ChatApp = () => {
   // @ts-ignore
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showImagePreview, setShowImagePreview] = useState(false);
+
 
   const languageLabelsArray = availableLanguages.map(
     (language) => language.label,
@@ -177,8 +178,7 @@ const ChatApp = () => {
     await subscribeToTopic(selectedLanguage, onItem, onError);
   };
 
-  const onSendMessage = async (event: Event) => {
-    event.preventDefault();
+  const onSendMessage = async () => {
     if (textInput) {
       await sendTextMessage({
         messageType: MessageType.TEXT,
@@ -235,10 +235,19 @@ const ChatApp = () => {
     void fetchLatestChats();
   }, [selectedLanguage]);
 
+  // const scrollToBottom = () => {
+  //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //   // @ts-ignore
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // };
+
   const scrollToBottom = () => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Get the scroll height of the chat container
+    const chatContainer = document.querySelector(".scrollbar-width-thin");
+    const scrollHeight = chatContainer?.scrollHeight;
+
+    // Scroll the chat container to the bottom
+    chatContainer?.scrollTo(0, scrollHeight ?? 0);
   };
 
   useEffect(() => {
@@ -288,11 +297,11 @@ const ChatApp = () => {
           </select>
         </div>
       </div>
-      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-y-auto p-4 font-inter">
+      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-auto p-4 font-inter">
         {chats.map((chat, index) => (
           <div key={index} className={`mb-2 flex items-end p-2`}>
             <div
-              className="mr-6 flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full"
+              className="mr-6 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full"
               style={{ backgroundColor: getUsernameColor(chat.user.id) }}
             >
               <span className="text-xs font-bold text-black">
