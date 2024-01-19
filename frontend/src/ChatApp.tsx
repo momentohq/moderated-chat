@@ -235,9 +235,9 @@ const ChatApp = () => {
   }, [selectedLanguage]);
 
   const scrollToBottom = () => {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const chatContainer = document.querySelector(".scrollbar-width-thin");
+    const scrollHeight = chatContainer?.scrollHeight;
+    chatContainer?.scrollTo(0, scrollHeight ?? 0);
   };
 
   useEffect(() => {
@@ -287,11 +287,11 @@ const ChatApp = () => {
           </select>
         </div>
       </div>
-      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-hidden overflow-y-auto p-4 font-inter">
+      <div className="scrollbar-width-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-auto p-4 font-inter">
         {chats.map((chat, index) => (
           <div key={index} className={`mb-2 flex items-end p-2`}>
             <div
-              className="mr-6 flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full"
+              className="mr-6 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full"
               style={{ backgroundColor: getUsernameColor(chat.user.id) }}
             >
               <span className="text-xs font-bold text-black">
