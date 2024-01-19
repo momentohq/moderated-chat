@@ -234,18 +234,9 @@ const ChatApp = () => {
     void fetchLatestChats();
   }, [selectedLanguage]);
 
-  // const scrollToBottom = () => {
-  //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //   // @ts-ignore
-  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  // };
-
   const scrollToBottom = () => {
-    // Get the scroll height of the chat container
     const chatContainer = document.querySelector(".scrollbar-width-thin");
     const scrollHeight = chatContainer?.scrollHeight;
-
-    // Scroll the chat container to the bottom
     chatContainer?.scrollTo(0, scrollHeight ?? 0);
   };
 
