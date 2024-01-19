@@ -1,20 +1,17 @@
 //
-//  HeaderView.swift
-//  ModeratedChat
-//
-//  Created by Anita Ruangrotsakun on 1/16/24.
-//
-
 import SwiftUI
 
 struct HeaderView: View {
     let displayLanguage: Bool
+    @State var selectedLanguage = "en"
+    @State var supportedLanguages: [Language] = []
+    @EnvironmentObject var translationApi: TranslationApi
     
     var body: some View {
         ZStack {
             Rectangle()
                 .fill(Color(red: 37/225, green: 57/225, blue: 43/225))
-                .frame(width: .infinity, height: 50.0)
+                .frame(maxWidth: .infinity, maxHeight: 50)
             HStack {
                 Image("mochat-mo-peek-up")
                     .resizable()
@@ -25,19 +22,27 @@ struct HeaderView: View {
                     .fontWeight(/*@START_MENU_TOKEN@*/.bold/*@END_MENU_TOKEN@*/)
                     .frame(maxWidth: .infinity, alignment: .center)
                 if displayLanguage {
-                    Text("Language Selector TBA")
-                        .foregroundStyle(.white)
-                        .font(.caption)
-                        .frame(maxWidth: 100.0, alignment: .trailing)
+                    Picker("Select Language", selection: $selectedLanguage) {
+                        ForEach(self.supportedLanguages, id: \.value) {
+                            Text($0.label)
+                        }
+                    }
+                    .accentColor(.white)
+                    .frame(maxWidth: 150.0, alignment: .trailing)
                 }
+            }
+        }
+        .onAppear {
+            Task {
+                self.supportedLanguages = await translationApi.getSupportedLanguages()
             }
         }
     }
 }
 
-#Preview {
-    VStack {
-        HeaderView(displayLanguage: true)
-        HeaderView(displayLanguage: false)
-    }
-}
+//#Preview {
+//    VStack {
+//        HeaderView(displayLanguage: true)
+//        HeaderView(displayLanguage: false)
+//    }
+//}

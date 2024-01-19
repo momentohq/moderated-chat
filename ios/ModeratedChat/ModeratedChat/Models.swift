@@ -1,7 +1,7 @@
 import Foundation
 
-struct User: Identifiable {
-    let id = UUID()
+struct User: Identifiable, Codable {
+    var id = UUID()
     let username: String
 }
 
@@ -24,4 +24,18 @@ struct PostMessageEvent {
     let message: String
     let sourceLanguage: String
     let timestamp: Date
+}
+
+struct MomentoToken: Decodable {
+    let token: String
+    let expiresAtEpoch: Date
+}
+
+struct Language: Decodable {
+    let label: String
+    let value: String
+}
+
+struct SupportedLanguages: Decodable {
+    var supportedLanguages: [Language]
 }

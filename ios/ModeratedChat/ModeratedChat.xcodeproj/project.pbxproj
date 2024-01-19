@@ -15,6 +15,10 @@
 		08B3F12E2B57593A003D2CB3 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F12D2B57593A003D2CB3 /* ChatView.swift */; };
 		08B3F1302B575A3E003D2CB3 /* HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F12F2B575A3E003D2CB3 /* HeaderView.swift */; };
 		08B3F1322B58418D003D2CB3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F1312B58418D003D2CB3 /* Models.swift */; };
+		08B3F1352B5890ED003D2CB3 /* Momento in Frameworks */ = {isa = PBXBuildFile; productRef = 08B3F1342B5890ED003D2CB3 /* Momento */; };
+		08B3F1372B5892C8003D2CB3 /* Momento.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F1362B5892C8003D2CB3 /* Momento.swift */; };
+		08B3F1392B59AAE0003D2CB3 /* Users.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F1382B59AAE0003D2CB3 /* Users.swift */; };
+		08B3F13C2B59B1DA003D2CB3 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 08B3F13B2B59B1DA003D2CB3 /* Alamofire */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +31,8 @@
 		08B3F12D2B57593A003D2CB3 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		08B3F12F2B575A3E003D2CB3 /* HeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderView.swift; sourceTree = "<group>"; };
 		08B3F1312B58418D003D2CB3 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		08B3F1362B5892C8003D2CB3 /* Momento.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Momento.swift; sourceTree = "<group>"; };
+		08B3F1382B59AAE0003D2CB3 /* Users.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Users.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -34,6 +40,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				08B3F1352B5890ED003D2CB3 /* Momento in Frameworks */,
+				08B3F13C2B59B1DA003D2CB3 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -67,6 +75,8 @@
 				08B3F12D2B57593A003D2CB3 /* ChatView.swift */,
 				08B3F12F2B575A3E003D2CB3 /* HeaderView.swift */,
 				08B3F1312B58418D003D2CB3 /* Models.swift */,
+				08B3F1362B5892C8003D2CB3 /* Momento.swift */,
+				08B3F1382B59AAE0003D2CB3 /* Users.swift */,
 			);
 			path = ModeratedChat;
 			sourceTree = "<group>";
@@ -95,6 +105,10 @@
 			dependencies = (
 			);
 			name = ModeratedChat;
+			packageProductDependencies = (
+				08B3F1342B5890ED003D2CB3 /* Momento */,
+				08B3F13B2B59B1DA003D2CB3 /* Alamofire */,
+			);
 			productName = ModeratedChat;
 			productReference = 08B3F11A2B572889003D2CB3 /* ModeratedChat.app */;
 			productType = "com.apple.product-type.application";
@@ -123,6 +137,10 @@
 				Base,
 			);
 			mainGroup = 08B3F1112B572889003D2CB3;
+			packageReferences = (
+				08B3F1332B5890ED003D2CB3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
+				08B3F13A2B59B1DA003D2CB3 /* XCRemoteSwiftPackageReference "Alamofire" */,
+			);
 			productRefGroup = 08B3F11B2B572889003D2CB3 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -149,11 +167,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				08B3F1392B59AAE0003D2CB3 /* Users.swift in Sources */,
 				08B3F1302B575A3E003D2CB3 /* HeaderView.swift in Sources */,
 				08B3F12E2B57593A003D2CB3 /* ChatView.swift in Sources */,
 				08B3F12C2B5758B1003D2CB3 /* HomeView.swift in Sources */,
 				08B3F1322B58418D003D2CB3 /* Models.swift in Sources */,
 				08B3F1202B572889003D2CB3 /* ContentView.swift in Sources */,
+				08B3F1372B5892C8003D2CB3 /* Momento.swift in Sources */,
 				08B3F11E2B572889003D2CB3 /* ModeratedChatApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -358,6 +378,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		08B3F1332B5890ED003D2CB3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/momentohq/client-sdk-swift";
+			requirement = {
+				kind = exactVersion;
+				version = 0.4.0;
+			};
+		};
+		08B3F13A2B59B1DA003D2CB3 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.8.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		08B3F1342B5890ED003D2CB3 /* Momento */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 08B3F1332B5890ED003D2CB3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
+			productName = Momento;
+		};
+		08B3F13B2B59B1DA003D2CB3 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 08B3F13A2B59B1DA003D2CB3 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 08B3F1122B572889003D2CB3 /* Project object */;
 }

@@ -1,20 +1,25 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Binding var isUsernameSet: Bool
     @State private var username: String = ""
+    
     var body: some View {
         VStack {
             HeaderView(displayLanguage: false)
             
             VStack {
-                Text("Enter username:")
+                Text("Enter your username:")
                     .foregroundStyle(.white)
                 TextField("Username", text: $username)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
+                    .padding([.horizontal])
+                    .onSubmit {
+                        isUsernameSet = true
+                        createUser(username: username)
+                    }
                 // TODO: how to restrict username input length and apply profanity filter on it?
             }
-            
         }
         .frame(
               minWidth: 0,
@@ -27,6 +32,6 @@ struct HomeView: View {
     }
 }
 
-#Preview {
-    HomeView()
-}
+//#Preview {
+//    HomeView(isUsernameSet: false)
+//}
