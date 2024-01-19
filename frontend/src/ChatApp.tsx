@@ -1,4 +1,4 @@
-import React, {type ChangeEvent, MouseEventHandler, useEffect, useLayoutEffect, useRef, useState} from "react";
+import React, { type ChangeEvent, useEffect, useRef, useState } from "react";
 import {
   compressImage,
   getImageMessage,
@@ -37,7 +37,6 @@ const ChatApp = () => {
   // @ts-ignore
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showImagePreview, setShowImagePreview] = useState(false);
-
 
   const languageLabelsArray = availableLanguages.map(
     (language) => language.label,
