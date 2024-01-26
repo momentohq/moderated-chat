@@ -1,11 +1,9 @@
-//
 import SwiftUI
 
 struct HeaderView: View {
     let displayLanguage: Bool
     @State var selectedLanguage = "en"
-    @State var supportedLanguages: [Language] = []
-    @EnvironmentObject var translationApi: TranslationApi
+    @StateObject var translationApi = TranslationApi.shared
     
     var body: some View {
         ZStack {
@@ -23,26 +21,18 @@ struct HeaderView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                 if displayLanguage {
                     Picker("Select Language", selection: $selectedLanguage) {
-                        ForEach(self.supportedLanguages, id: \.value) {
+                        ForEach(self.translationApi.supportedLanguages, id: \.value) {
                             Text($0.label)
                         }
+                    }
+                    .onChange(of: selectedLanguage) {
+                        let languageWithMatchingLabel = self.translationApi.supportedLanguages.first(where: { $0.value == selectedLanguage })
+                        self.translationApi.updateSelectedLanguage(language: languageWithMatchingLabel!)
                     }
                     .accentColor(.white)
                     .frame(maxWidth: 150.0, alignment: .trailing)
                 }
             }
         }
-        .onAppear {
-            Task {
-                self.supportedLanguages = await translationApi.getSupportedLanguages()
-            }
-        }
     }
 }
-
-//#Preview {
-//    VStack {
-//        HeaderView(displayLanguage: true)
-//        HeaderView(displayLanguage: false)
-//    }
-//}

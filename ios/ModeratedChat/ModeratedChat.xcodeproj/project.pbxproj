@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08ABEF462B62F31A00A31A34 /* MessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08ABEF452B62F31A00A31A34 /* MessageStore.swift */; };
 		08B3F11E2B572889003D2CB3 /* ModeratedChatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F11D2B572889003D2CB3 /* ModeratedChatApp.swift */; };
 		08B3F1202B572889003D2CB3 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F11F2B572889003D2CB3 /* ContentView.swift */; };
 		08B3F1222B57288A003D2CB3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 08B3F1212B57288A003D2CB3 /* Assets.xcassets */; };
@@ -16,12 +17,14 @@
 		08B3F1302B575A3E003D2CB3 /* HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F12F2B575A3E003D2CB3 /* HeaderView.swift */; };
 		08B3F1322B58418D003D2CB3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F1312B58418D003D2CB3 /* Models.swift */; };
 		08B3F1352B5890ED003D2CB3 /* Momento in Frameworks */ = {isa = PBXBuildFile; productRef = 08B3F1342B5890ED003D2CB3 /* Momento */; };
-		08B3F1372B5892C8003D2CB3 /* Momento.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F1362B5892C8003D2CB3 /* Momento.swift */; };
 		08B3F1392B59AAE0003D2CB3 /* Users.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F1382B59AAE0003D2CB3 /* Users.swift */; };
 		08B3F13C2B59B1DA003D2CB3 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 08B3F13B2B59B1DA003D2CB3 /* Alamofire */; };
+		08ED530F2B63001E008432E1 /* MomentoClients.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08ED530E2B63001E008432E1 /* MomentoClients.swift */; };
+		08ED53112B630075008432E1 /* TranslationApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08ED53102B630075008432E1 /* TranslationApi.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		08ABEF452B62F31A00A31A34 /* MessageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageStore.swift; sourceTree = "<group>"; };
 		08B3F11A2B572889003D2CB3 /* ModeratedChat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ModeratedChat.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		08B3F11D2B572889003D2CB3 /* ModeratedChatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeratedChatApp.swift; sourceTree = "<group>"; };
 		08B3F11F2B572889003D2CB3 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -31,8 +34,9 @@
 		08B3F12D2B57593A003D2CB3 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		08B3F12F2B575A3E003D2CB3 /* HeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderView.swift; sourceTree = "<group>"; };
 		08B3F1312B58418D003D2CB3 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		08B3F1362B5892C8003D2CB3 /* Momento.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Momento.swift; sourceTree = "<group>"; };
 		08B3F1382B59AAE0003D2CB3 /* Users.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Users.swift; sourceTree = "<group>"; };
+		08ED530E2B63001E008432E1 /* MomentoClients.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MomentoClients.swift; sourceTree = "<group>"; };
+		08ED53102B630075008432E1 /* TranslationApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationApi.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,8 +79,10 @@
 				08B3F12D2B57593A003D2CB3 /* ChatView.swift */,
 				08B3F12F2B575A3E003D2CB3 /* HeaderView.swift */,
 				08B3F1312B58418D003D2CB3 /* Models.swift */,
-				08B3F1362B5892C8003D2CB3 /* Momento.swift */,
 				08B3F1382B59AAE0003D2CB3 /* Users.swift */,
+				08ABEF452B62F31A00A31A34 /* MessageStore.swift */,
+				08ED530E2B63001E008432E1 /* MomentoClients.swift */,
+				08ED53102B630075008432E1 /* TranslationApi.swift */,
 			);
 			path = ModeratedChat;
 			sourceTree = "<group>";
@@ -167,13 +173,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				08ED53112B630075008432E1 /* TranslationApi.swift in Sources */,
 				08B3F1392B59AAE0003D2CB3 /* Users.swift in Sources */,
 				08B3F1302B575A3E003D2CB3 /* HeaderView.swift in Sources */,
 				08B3F12E2B57593A003D2CB3 /* ChatView.swift in Sources */,
+				08ABEF462B62F31A00A31A34 /* MessageStore.swift in Sources */,
 				08B3F12C2B5758B1003D2CB3 /* HomeView.swift in Sources */,
 				08B3F1322B58418D003D2CB3 /* Models.swift in Sources */,
 				08B3F1202B572889003D2CB3 /* ContentView.swift in Sources */,
-				08B3F1372B5892C8003D2CB3 /* Momento.swift in Sources */,
+				08ED530F2B63001E008432E1 /* MomentoClients.swift in Sources */,
 				08B3F11E2B572889003D2CB3 /* ModeratedChatApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

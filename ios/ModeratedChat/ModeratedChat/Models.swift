@@ -1,34 +1,34 @@
 import Foundation
 
 struct User: Identifiable, Codable {
-    var id = UUID()
+    let id: String
     let username: String
 }
 
-enum MessageType {
-    case text
-    case image
+enum MessageType: String, Codable {
+    case text = "text"
+    case image = "image"
 }
 
-struct ChatMessageEvent: Identifiable {
+struct ChatMessageEvent: Identifiable, Decodable {
     let id = UUID()
     let user: User
     let messageType: MessageType
     let message: String
     let sourceLanguage: String
-    let timestamp: Date
+    let timestamp: Int
 }
 
-struct PostMessageEvent {
-    let messageType: MessageType
+struct PostMessageEvent: Codable {
+    let messageType: String
     let message: String
     let sourceLanguage: String
-    let timestamp: Date
+    let timestamp: Int
 }
 
 struct MomentoToken: Decodable {
     let token: String
-    let expiresAtEpoch: Date
+    let expiresAtEpoch: Int
 }
 
 struct Language: Decodable {

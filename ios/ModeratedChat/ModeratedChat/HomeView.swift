@@ -31,7 +31,3 @@ struct HomeView: View {
         .background(Color(red: 37/225, green: 57/225, blue: 43/225))
     }
 }
-
-//#Preview {
-//    HomeView(isUsernameSet: false)
-//}

@@ -1,7 +1,7 @@
 import Foundation
 
 func createUser(username: String) {
-    let newUser = User(username: username)
+    let newUser = User(id: UUID().uuidString, username: username)
     if let encodedUser = try? JSONEncoder().encode(newUser) {
         UserDefaults.standard.set(encodedUser, forKey: "momentoUser")
     }
