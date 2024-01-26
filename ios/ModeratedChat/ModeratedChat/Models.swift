@@ -39,3 +39,7 @@ struct Language: Decodable {
 struct SupportedLanguages: Decodable {
     var supportedLanguages: [Language]
 }
+
+struct MessageHistory: Decodable {
+    var messages: [ChatMessageEvent]
+}

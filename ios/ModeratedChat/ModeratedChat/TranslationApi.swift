@@ -49,4 +49,16 @@ class TranslationApi: ObservableObject {
             print("Nil language selected")
         }
     }
+    
+    func getLatestChats() async -> Array<ChatMessageEvent> {
+        do {
+            print("Fetching chats using language \(String(describing: self.selectedLanguage?.value))")
+            let response = try await AF.request(
+                "\(self.baseUrl)/v1/translate/latestMessages/\(self.selectedLanguage?.value ?? "en")"
+            ).serializingDecodable(MessageHistory.self).value
+            return response.messages
+        } catch {
+            fatalError("Unable to fetch message history: \(error)")
+        }
+    }
 }
