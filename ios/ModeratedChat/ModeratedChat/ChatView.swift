@@ -57,9 +57,16 @@ struct ChatItemView: View {
     
     var body: some View {
         Section {
-            Text(self.chatMessageEvent.message)
-                .listRowBackground(Rectangle().fill(Color.white))
-                .fixedSize(horizontal: false, vertical: true)
+            // Translation API currently returns full base64 encoded image
+            if chatMessageEvent.messageType == .image {
+                Image(uiImage: UIImage(data: Data(base64Encoded: chatMessageEvent.message)!)!)
+                    .listRowBackground(Rectangle().fill(Color.white))
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(self.chatMessageEvent.message)
+                    .listRowBackground(Rectangle().fill(Color.white))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         } header: {
             HStack {
                 Text("\(self.chatMessageEvent.user.username)")
