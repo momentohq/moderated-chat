@@ -61,9 +61,14 @@ struct ChatItemView: View {
                 .listRowBackground(Rectangle().fill(Color.white))
                 .fixedSize(horizontal: false, vertical: true)
         } header: {
-            Text("\(self.chatMessageEvent.user.username) - \(self.formattedTime)")
-                .foregroundColor(.white)
-            // TODO: change username color based on user
+            HStack {
+                Text("\(self.chatMessageEvent.user.username)")
+                    .foregroundColor(getUsernameColor(username: chatMessageEvent.user.username))
+                // TODO: change username color based on user
+                Text(" - \(self.formattedTime)")
+                    .foregroundColor(.white)
+            }
+            
         }
     }
 }
