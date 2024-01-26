@@ -7,21 +7,17 @@ class MessageStore: ObservableObject {
     @Published var chatMessageEvents: [ChatMessageEvent] = []
     
     @MainActor
-    func fetchMessageHistory() async {
-        self.chatMessageEvents = await translationApi.getLatestChats()
-    }
-    
-    @MainActor
     func receiveMessages() async {
         while (true) {
             while (momentoClients.subscription == nil) {
                 print("Waiting for non-nil subscription")
+                try! await Task.sleep(for: .milliseconds(100))
             }
+            self.chatMessageEvents = await translationApi.getLatestChats()
             if let nonNilSubscription = momentoClients.subscription {
                 for try await item in nonNilSubscription.stream {
                     switch item {
                     case .itemText(let textItem):
-                        print("Subscriber recieved text message: \(textItem.value)")
                         let response: ChatMessageEvent = try! JSONDecoder().decode(ChatMessageEvent.self, from: textItem.value.data(using: .utf8)!)
                         chatMessageEvents.append(response)
                     case .itemBinary(let binaryItem):
@@ -31,6 +27,8 @@ class MessageStore: ObservableObject {
                         print("Subscriber received error: \(err)")
                     }
                 }
+            } else {
+                print("Subscription was nil")
             }
         }
     }

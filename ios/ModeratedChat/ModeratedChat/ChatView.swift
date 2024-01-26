@@ -39,7 +39,6 @@ struct ChatView: View {
         .onAppear {
             Task {
                 await momentoClients.getMomentoClients()
-                await store.fetchMessageHistory()
                 await store.receiveMessages()
             }
         }

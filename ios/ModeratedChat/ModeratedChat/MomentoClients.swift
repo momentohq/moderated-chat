@@ -13,6 +13,7 @@ class MomentoClients: ObservableObject {
     @Published var cacheClient: CacheClient? = nil
     @Published var subscription: TopicSubscription? = nil
     
+    @MainActor
     func getMomentoClients() async {
         do {
             let momentoToken: MomentoToken = await translationApi.createToken()
@@ -31,25 +32,39 @@ class MomentoClients: ObservableObject {
         } catch {
             fatalError("Unable to establish Momento clients: \(error)")
         }
-        
-        let response = await self.topicClient?.subscribe(cacheName: self.cacheName, topicName: "chat-en")
-        switch response {
-        case .subscription(let sub):
-            self.subscription = sub
-        case .error(let err):
-            fatalError("Unable to subscribe to Momento chat topic: \(err)")
-        default:
-            fatalError("Unable to subscribe to Momento chat topic")
+        await subscribeToTopic()
+    }
+    
+    @MainActor
+    func subscribeToTopic() async {
+        if let nonNilSubscription = self.subscription {
+            nonNilSubscription.unsubscribe()
+            self.subscription = nil
+            print("Unsubscribed from previous topic")
+        }
+        if let nonNilTopicClient = self.topicClient {
+            print("Subscribing to topic: chat-\(translationApi.selectedLanguageCode)")
+            let response = await nonNilTopicClient.subscribe(
+                cacheName: self.cacheName,
+                topicName: "chat-\(translationApi.selectedLanguageCode)"
+            )
+            switch response {
+            case .subscription(let sub):
+                self.subscription = sub
+            case .error(let err):
+                fatalError("Unable to subscribe to Momento chat topic: \(err)")
+            }
+        } else {
+            fatalError("Unable to subscribe to Momento chat topic, topic client was nil")
         }
     }
     
     func publishMessage(message: String) async {
-        // TODO: source language shouldn't be hardcoded
-        let formattedMessage = PostMessageEvent(
+        let formattedMessage = await PostMessageEvent(
             messageType: MessageType.text.rawValue,
             message: message,
-            sourceLanguage: "en",
-            timestamp: Int(Date.now.timeIntervalSince1970 * 1000)
+            sourceLanguage: translationApi.selectedLanguageCode,
+            timestamp: Int(Date.now.timeIntervalSince1970 * 1000) // milliseconds
         )
         if let nonNilTopicClient = self.topicClient {
             let jsonData = try! JSONEncoder().encode(formattedMessage)

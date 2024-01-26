@@ -5,9 +5,8 @@ import Alamofire
 @MainActor
 class TranslationApi: ObservableObject {
     static let shared = TranslationApi()
-    
     private let baseUrl = "https://57zovcekn0.execute-api.us-west-2.amazonaws.com/prod";
-    @Published var selectedLanguage: Language? = nil
+    @Published var selectedLanguageCode: String = "en"
     @Published var supportedLanguages: [Language] = []
     
     init() {
@@ -35,7 +34,6 @@ class TranslationApi: ObservableObject {
         do {
             let response = try await AF.request("\(self.baseUrl)/v1/translate/languages").serializingDecodable(SupportedLanguages.self).value
             self.supportedLanguages = response.supportedLanguages
-            self.selectedLanguage = self.supportedLanguages.first
         } catch {
             fatalError("Unable to get supported languages: \(error)")
         }
@@ -43,7 +41,7 @@ class TranslationApi: ObservableObject {
     
     func updateSelectedLanguage(language: Language?) {
         if let nonNilLanguage = language {
-            self.selectedLanguage = nonNilLanguage
+            self.selectedLanguageCode = nonNilLanguage.value
             print("New language selected: \(nonNilLanguage)")
         } else {
             print("Nil language selected")
@@ -52,9 +50,9 @@ class TranslationApi: ObservableObject {
     
     func getLatestChats() async -> Array<ChatMessageEvent> {
         do {
-            print("Fetching chats using language \(String(describing: self.selectedLanguage?.value))")
+            print("Fetching message history using language \(String(describing: self.selectedLanguageCode))")
             let response = try await AF.request(
-                "\(self.baseUrl)/v1/translate/latestMessages/\(self.selectedLanguage?.value ?? "en")"
+                "\(self.baseUrl)/v1/translate/latestMessages/\(self.selectedLanguageCode)"
             ).serializingDecodable(MessageHistory.self).value
             return response.messages
         } catch {

@@ -4,6 +4,7 @@ struct HeaderView: View {
     let displayLanguage: Bool
     @State var selectedLanguage = "en"
     @StateObject var translationApi = TranslationApi.shared
+    @StateObject var momentoClients = MomentoClients.shared
     
     var body: some View {
         ZStack {
@@ -28,6 +29,9 @@ struct HeaderView: View {
                     .onChange(of: selectedLanguage) {
                         let languageWithMatchingLabel = self.translationApi.supportedLanguages.first(where: { $0.value == selectedLanguage })
                         self.translationApi.updateSelectedLanguage(language: languageWithMatchingLabel!)
+                        Task {
+                            await momentoClients.subscribeToTopic()
+                        }
                     }
                     .accentColor(.white)
                     .frame(maxWidth: 150.0, alignment: .trailing)
