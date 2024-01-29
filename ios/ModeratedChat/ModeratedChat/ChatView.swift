@@ -9,7 +9,7 @@ struct ChatView: View {
     @State private var textInput: String = ""
     @State private var selectedImage: PhotosPickerItem? = nil
     @State private var imageInput: Image? = nil
-    @State private var base64ImageInput: String? = nil
+    @State private var imageInputAsData: Data? = nil
     @State private var uiImageInput: UIImage? = nil
 
     var body: some View {
@@ -47,9 +47,7 @@ struct ChatView: View {
                             self.imageInput = loaded
                         }
                         if let loadedImageAsData = try? await selectedImage?.loadTransferable(type: Data.self) {
-                            let uiImage = UIImage(data: loadedImageAsData)!
-                            let compressedImage = compressImage(image: uiImage)
-                            self.base64ImageInput = compressedImage.pngData()!.base64EncodedString()
+                            self.imageInputAsData = loadedImageAsData
                         }
                     }
                 }
@@ -120,13 +118,19 @@ struct ChatView: View {
     
     // TODO: test with different image sizes, compress images that are too large
     func sendImageMessage() {
-        if let nonNilImage = self.base64ImageInput, let nonNilCacheClient = momentoClients.cacheClient {
+        
+        
+        if let nonNilImageData = self.imageInputAsData, let nonNilCacheClient = momentoClients.cacheClient {
             Task {
                 let imageId = "image-\(UUID().uuidString)"
+                let uiImage = UIImage(data: nonNilImageData)!
+                let compressedImage = compressImage(image: uiImage)
+                let base64Image = compressedImage.pngData()!.base64EncodedString()
+                
                 let setResponse = await nonNilCacheClient.set(
                     cacheName: momentoClients.cacheName,
                     key: imageId,
-                    value: nonNilImage
+                    value: base64Image
                 )
                 switch (setResponse) {
                 case .success(_):
@@ -134,9 +138,10 @@ struct ChatView: View {
                 case .error(let err):
                     print("Failed to store image in cache: \(err)")
                 }
+                
                 await momentoClients.publishMessage(message: imageId, messageType: MessageType.image)
                 self.imageInput = nil
-                self.base64ImageInput = nil
+                self.imageInputAsData = nil
                 self.selectedImage = nil
             }
         }
@@ -145,7 +150,7 @@ struct ChatView: View {
     func cancelImageMessage() {
         print("Canceling sending image")
         self.imageInput = nil
-        self.base64ImageInput = nil
+        self.imageInputAsData = nil
         self.selectedImage = nil
     }
     
