@@ -16,13 +16,19 @@ struct ChatView: View {
         VStack {
             HeaderView(displayLanguage: true)
             Spacer()
-
-            List(self.store.chatMessageEvents) {event in
-                ChatItemView(chatMessageEvent: event)
+            
+            ScrollView {
+                LazyVStack {
+                    ForEach(self.store.chatMessageEvents) { event in
+                        ChatItemView(chatMessageEvent: event)
+                    }
+                }
+                .scrollTargetLayout()
             }
             .scrollContentBackground(.hidden)
             .background(Color(red: 37/225, green: 57/225, blue: 43/225))
             .overlay(PreviewImageOverlay)
+            .defaultScrollAnchor(.bottom)
 
             HStack {
                 TextField("Enter your message here", text: $textInput)
@@ -43,7 +49,6 @@ struct ChatView: View {
                 .onChange(of: selectedImage) {
                     Task {
                         if let loaded = try? await selectedImage?.loadTransferable(type: Image.self) {
-                            // compress image
                             self.imageInput = loaded
                         }
                         if let loadedImageAsData = try? await selectedImage?.loadTransferable(type: Data.self) {
@@ -205,22 +210,43 @@ struct ChatItemView: View {
     var body: some View {
         Section {
             if chatMessageEvent.messageType == .image, let nonNilImage = self.image {
-                nonNilImage
-                    .listRowBackground(Rectangle().fill(Color.white))
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    nonNilImage
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .padding()
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: 300, maxHeight: .infinity, alignment: .leading)
+                        .background(Color.white, in: RoundedRectangle(cornerRadius: 25.0))
+                    Spacer()
+                }
+                .padding([.leading, .bottom], 12)
+                .frame(alignment: .leading)
+                
             }
             if chatMessageEvent.messageType == .text {
-                Text(self.chatMessageEvent.message)
-                    .listRowBackground(Rectangle().fill(Color.white))
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack {
+                    Text(self.chatMessageEvent.message)
+                        .padding()
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(alignment: .leading)
+                        .background(Color.white, in: RoundedRectangle(cornerRadius: 25.0))
+                    Spacer()
+                }
+                .padding([.leading], 12)
+                .padding([.bottom], 24)
+                .frame(alignment: .leading)
             }
         } header: {
             HStack {
                 Text("\(self.chatMessageEvent.user.username)")
                     .foregroundColor(getUsernameColor(username: chatMessageEvent.user.username))
+                    .padding([.leading], 12)
                 Text(" - \(self.formattedTime)")
                     .foregroundColor(.white)
+                Spacer()
             }
+            
         }
     }
 }
