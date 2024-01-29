@@ -10,6 +10,7 @@ struct ChatView: View {
     @State private var selectedImage: PhotosPickerItem? = nil
     @State private var imageInput: Image? = nil
     @State private var base64ImageInput: String? = nil
+    @State private var uiImageInput: UIImage? = nil
 
     var body: some View {
         VStack {
@@ -42,10 +43,13 @@ struct ChatView: View {
                 .onChange(of: selectedImage) {
                     Task {
                         if let loaded = try? await selectedImage?.loadTransferable(type: Image.self) {
+                            // compress image
                             self.imageInput = loaded
                         }
-                        if let loadedBase64 = try? await selectedImage?.loadTransferable(type: Data.self) {
-                            self.base64ImageInput = loadedBase64.base64EncodedString()
+                        if let loadedImageAsData = try? await selectedImage?.loadTransferable(type: Data.self) {
+                            let uiImage = UIImage(data: loadedImageAsData)!
+                            let compressedImage = compressImage(image: uiImage)
+                            self.base64ImageInput = compressedImage.pngData()!.base64EncodedString()
                         }
                     }
                 }
@@ -144,6 +148,36 @@ struct ChatView: View {
         self.base64ImageInput = nil
         self.selectedImage = nil
     }
+    
+    func compressImage(image: UIImage) -> UIImage {
+        let maxBytes = 70000
+        let currentImageSize = image.jpegData(compressionQuality: 1.0)!.count
+        if currentImageSize < maxBytes {
+            return image
+        }
+        
+        var iterationImage: UIImage = image
+        var iterationImageSize = currentImageSize
+        var iterationCompression: CGFloat = 1.0
+
+        while iterationImageSize > maxBytes && iterationCompression > 0.01 {
+            let percentageDecrease = 0.05
+
+            let canvasSize = CGSize(width: image.size.width * iterationCompression,
+                                    height: image.size.height * iterationCompression)
+            UIGraphicsBeginImageContextWithOptions(canvasSize, false, image.scale)
+            defer { UIGraphicsEndImageContext() }
+            image.draw(in: CGRect(origin: .zero, size: canvasSize))
+            iterationImage = UIGraphicsGetImageFromCurrentImageContext()!
+
+            let newImageSize = iterationImage.jpegData(compressionQuality: 1.0)!.count
+            iterationImageSize = newImageSize
+            iterationCompression -= percentageDecrease
+        }
+
+        print("Compressed image final size: \(iterationImageSize) bytes")
+        return iterationImage
+    }
 }
 
 struct ChatItemView: View {
@@ -182,7 +216,6 @@ struct ChatItemView: View {
                 Text(" - \(self.formattedTime)")
                     .foregroundColor(.white)
             }
-            
         }
     }
 }
