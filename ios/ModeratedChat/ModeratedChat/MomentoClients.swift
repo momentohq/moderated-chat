@@ -59,9 +59,9 @@ class MomentoClients: ObservableObject {
         }
     }
     
-    func publishMessage(message: String) async {
+    func publishMessage(message: String, messageType: MessageType) async {
         let formattedMessage = await PostMessageEvent(
-            messageType: MessageType.text.rawValue,
+            messageType: messageType.rawValue,
             message: message,
             sourceLanguage: translationApi.selectedLanguageCode,
             timestamp: Int(Date.now.timeIntervalSince1970 * 1000) // milliseconds
@@ -81,7 +81,7 @@ class MomentoClients: ObservableObject {
                 if err.errorCode == MomentoErrorCode.AUTHENTICATION_ERROR {
                     print("token has expired, refreshing subscription and retrying publish")
                     await getMomentoClients()
-                    await publishMessage(message: message)
+                    await publishMessage(message: message, messageType: messageType)
                 } else {
                     print("Unable to publish: \(err)")
                 }

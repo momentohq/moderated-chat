@@ -109,7 +109,7 @@ struct ChatView: View {
             return
         }
         Task {
-            await momentoClients.publishMessage(message: self.textInput)
+            await momentoClients.publishMessage(message: self.textInput, messageType: MessageType.text)
             self.textInput = ""
         }
     }
@@ -130,7 +130,7 @@ struct ChatView: View {
                 case .error(let err):
                     print("Failed to store image in cache: \(err)")
                 }
-                await momentoClients.publishMessage(message: imageId)
+                await momentoClients.publishMessage(message: imageId, messageType: MessageType.image)
                 self.imageInput = nil
                 self.base64ImageInput = nil
                 self.selectedImage = nil
@@ -147,25 +147,30 @@ struct ChatView: View {
 }
 
 struct ChatItemView: View {
+    let momentoClients = MomentoClients.shared
     let chatMessageEvent: ChatMessageEvent
     let formattedTime: String
+    var image: Image? = nil
     
     init(chatMessageEvent: ChatMessageEvent) {
         self.chatMessageEvent = chatMessageEvent
         let timestampInSeconds = TimeInterval(chatMessageEvent.timestamp / 1000)
         self.formattedTime = Date(timeIntervalSince1970: timestampInSeconds).formatted(date: .abbreviated, time: .shortened)
+        
+        // If image message received, convert from base64 encoded string to SwiftUI Image
+        if chatMessageEvent.messageType == MessageType.image {
+            self.image = Image(uiImage: UIImage(data: Data(base64Encoded: chatMessageEvent.message)!)!)
+        }
     }
     
     var body: some View {
         Section {
-            // Translation API currently appears to returns full base64 encoded image
-            // if image upload is successful, else returns image IDs
-            if chatMessageEvent.messageType == .image {
-                // TODO: handle when image IDs are received?
-                Image(uiImage: UIImage(data: Data(base64Encoded: chatMessageEvent.message)!)!)
+            if chatMessageEvent.messageType == .image, let nonNilImage = self.image {
+                nonNilImage
                     .listRowBackground(Rectangle().fill(Color.white))
                     .fixedSize(horizontal: false, vertical: true)
-            } else {
+            }
+            if chatMessageEvent.messageType == .text {
                 Text(self.chatMessageEvent.message)
                     .listRowBackground(Rectangle().fill(Color.white))
                     .fixedSize(horizontal: false, vertical: true)
