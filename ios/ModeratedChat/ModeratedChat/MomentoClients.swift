@@ -23,7 +23,7 @@ class MomentoClients: ObservableObject {
                 configuration: TopicClientConfigurations.iOS.latest(),
                 credentialProvider: creds
             )
-            // TODO: close cache client?
+            self.cacheClient?.close()
             self.cacheClient = CacheClient(
                 configuration: CacheClientConfigurations.iOS.latest(),
                 credentialProvider: creds,
