@@ -13,6 +13,7 @@ struct HomeView: View {
                     .foregroundStyle(.white)
                 TextField("Username", text: $username)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .foregroundColor(Color(red: 37/255, green: 57/255, blue: 43/255))
                     .padding([.horizontal])
                     .onSubmit {
                         isUsernameSet = true

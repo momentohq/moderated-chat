@@ -36,6 +36,7 @@ struct ChatView: View {
                     .frame(alignment: .leading)
                     .border(.secondary)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .foregroundColor(Color(red: 37/255, green: 57/255, blue: 43/255))
                     .onSubmit {
                         print("Received: \(textInput)")
                         sendTextMessage()
@@ -121,10 +122,7 @@ struct ChatView: View {
         }
     }
     
-    // TODO: test with different image sizes, compress images that are too large
     func sendImageMessage() {
-        
-        
         if let nonNilImageData = self.imageInputAsData, let nonNilCacheClient = momentoClients.cacheClient {
             Task {
                 let imageId = "image-\(UUID().uuidString)"
@@ -192,9 +190,14 @@ struct ChatView: View {
 
 struct ChatItemView: View {
     let momentoClients = MomentoClients.shared
+    let translationApi = TranslationApi.shared
     let chatMessageEvent: ChatMessageEvent
     let formattedTime: String
     var image: Image? = nil
+    
+    let mintColor: Color = Color(red: 0, green: 200/255, blue: 140/255)
+    let lightSquirrelColor: Color = Color(red: 225/255, green: 217/255, blue: 213/255)
+    let forestColor: Color = Color(red: 37/255, green: 57/255, blue: 43/255)
     
     init(chatMessageEvent: ChatMessageEvent) {
         self.chatMessageEvent = chatMessageEvent
@@ -203,12 +206,24 @@ struct ChatItemView: View {
         
         // If image message received, convert from base64 encoded string to SwiftUI Image
         if chatMessageEvent.messageType == MessageType.image {
-            self.image = Image(uiImage: UIImage(data: Data(base64Encoded: chatMessageEvent.message)!)!)
+            if chatMessageEvent.message.isEmpty {
+                self.image = nil
+            } else {
+                self.image = Image(uiImage: UIImage(data: Data(base64Encoded: chatMessageEvent.message)!)!)
+            }
         }
     }
     
     var body: some View {
-        Section {
+        HStack {
+            Text("\(String(self.chatMessageEvent.user.username.first!))")
+                .foregroundColor(forestColor)
+                .fontWeight(.bold)
+                .padding()
+                .background(getUsernameColor(username: chatMessageEvent.user.username))
+                .clipShape(Circle())
+                .frame(alignment: .bottomLeading)
+            
             if chatMessageEvent.messageType == .image, let nonNilImage = self.image {
                 HStack {
                     nonNilImage
@@ -217,36 +232,33 @@ struct ChatItemView: View {
                         .padding()
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: 300, maxHeight: .infinity, alignment: .leading)
-                        .background(Color.white, in: RoundedRectangle(cornerRadius: 25.0))
-                    Spacer()
+                        .background(
+                            translationApi.currentUsername == chatMessageEvent.user.username ? mintColor : lightSquirrelColor,
+                            in: RoundedRectangle(cornerRadius: 25.0)
+                        )
                 }
-                .padding([.leading, .bottom], 12)
-                .frame(alignment: .leading)
+                .padding([.vertical], 12)
+                .frame(alignment: .bottom)
                 
             }
-            if chatMessageEvent.messageType == .text {
+            else if chatMessageEvent.messageType == .text {
                 HStack {
                     Text(self.chatMessageEvent.message)
                         .padding()
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(alignment: .leading)
-                        .background(Color.white, in: RoundedRectangle(cornerRadius: 25.0))
-                    Spacer()
+                        .foregroundColor(forestColor)
+                        .background(
+                            translationApi.currentUsername == chatMessageEvent.user.username ? mintColor : lightSquirrelColor,
+                            in: RoundedRectangle(cornerRadius: 25.0)
+                        )
                 }
-                .padding([.leading], 12)
-                .padding([.bottom], 24)
-                .frame(alignment: .leading)
-            }
-        } header: {
-            HStack {
-                Text("\(self.chatMessageEvent.user.username)")
-                    .foregroundColor(getUsernameColor(username: chatMessageEvent.user.username))
-                    .padding([.leading], 12)
-                Text(" - \(self.formattedTime)")
-                    .foregroundColor(.white)
-                Spacer()
+                .padding([.vertical], 12)
+                .frame(alignment: .bottom)
             }
             
+            Spacer()
         }
+        .padding([.horizontal], 12)
     }
 }
