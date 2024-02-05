@@ -45,11 +45,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.google.gson.Gson
@@ -291,6 +293,7 @@ fun MessageBar(
     var message by remember { mutableStateOf("") }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var imageBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var showImageSizeError by remember { mutableStateOf(false) }
     val imageScope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -303,9 +306,20 @@ fun MessageBar(
         if (imageUri != null) {
             val item = context.contentResolver.openInputStream(imageUri!!)
             imageBytes = item?.readBytes()
-            println("Got ${imageBytes?.size} bytes")
-            println(Base64.getEncoder().encodeToString(imageBytes))
             item?.close()
+            println("Got ${imageBytes?.size} bytes")
+            if (imageBytes != null && imageBytes!!.size > 70_000) {
+                println("need to pop up an error for image size here")
+                imageScope.launch {
+                    coroutineScope {
+                        showImageSizeError = true
+                        delay(2_000)
+                        showImageSizeError = false
+                    }
+                }
+                return@rememberLauncherForActivityResult
+            }
+            println(Base64.getEncoder().encodeToString(imageBytes))
             imageScope.launch {
                 withContext(Dispatchers.IO) {
                     val imageId = "image-${UUID.randomUUID().toString()}"
@@ -334,49 +348,60 @@ fun MessageBar(
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TextField(
-            value = message,
-            onValueChange = { message = it },
-            label = { Text(text = "Type your message...") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-            modifier = modifier
-                .weight(1f)
-        )
-        Button(
-            onClick = {
-                if (message.isEmpty()) {
-                    return@Button
-                }
-                focusManager.clearFocus()
-                println("sending message $message")
-                // copy message value to send to publish
-                val publishMessage = message
-                imageScope.launch {
-                    publishMessage(
-                        userName = userName,
-                        userId = userId,
-                        currentLanguage = currentLanguage,
-                        chatMessage = publishMessage
-                    )
-                }
-                message = ""
-            }
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.send),
-                contentDescription = "Send",
+
+        if (!showImageSizeError) {
+            TextField(
+                value = message,
+                onValueChange = { message = it },
+                label = { Text(text = "Type your message...") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                modifier = modifier
+                    .weight(1f)
+                    .padding(12.dp)
             )
-        }
-        Button(
-            onClick = {
-                launcher.launch("image/*")
+            Button(
+                onClick = {
+                    if (message.isEmpty()) {
+                        return@Button
+                    }
+                    focusManager.clearFocus()
+                    println("sending message $message")
+                    // copy message value to send to publish
+                    val publishMessage = message
+                    imageScope.launch {
+                        publishMessage(
+                            userName = userName,
+                            userId = userId,
+                            currentLanguage = currentLanguage,
+                            chatMessage = publishMessage
+                        )
+                    }
+                    message = ""
+                }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.send),
+                    contentDescription = "Send",
+                )
             }
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.attach),
-                contentDescription = "Upload Image",
+            Button(
+                onClick = {
+                    launcher.launch("image/*")
+                }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.attach),
+                    contentDescription = "Upload Image",
+                )
+            }
+        } else {
+            Text(
+                text = "Error: Image must be below 70kb",
+                fontSize = 20.sp,
+                color = Color.Red,
             )
+
         }
     }
 }
