@@ -3,6 +3,7 @@ package software.momento.kotlin.moderatedchat
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
+import android.widget.ImageButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -328,7 +330,10 @@ fun MessageBar(
         }
     }
 
-    Row {
+    Row(
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         TextField(
             value = message,
             onValueChange = { message = it },
@@ -358,14 +363,20 @@ fun MessageBar(
                 message = ""
             }
         ) {
-            Text(text = "Send")
+            Image(
+                painter = painterResource(id = R.drawable.send),
+                contentDescription = "Send",
+            )
         }
         Button(
             onClick = {
                 launcher.launch("image/*")
             }
         ) {
-            Text(text = "IMG")
+            Image(
+                painter = painterResource(id = R.drawable.attach),
+                contentDescription = "Upload Image",
+            )
         }
     }
 }
