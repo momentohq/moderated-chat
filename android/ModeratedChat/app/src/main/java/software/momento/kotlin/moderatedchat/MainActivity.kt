@@ -34,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -306,7 +307,13 @@ fun ModeratedChatLayout(
                                             currentMessages.add(parsedMessage)
                                             println("message added to current messages list")
                                         }
+                                    } catch (e: RuntimeException) {
+                                        // TODO: getting a RuntimeException about grpc channel not
+                                        //  being closed correctly.
+                                        println("ignoring runtimeexception")
                                     } catch (e: Exception) {
+                                        throw e
+                                        println("topicSubscribe setting loadError")
                                         loadError = true
                                     }
 
@@ -612,7 +619,9 @@ fun LanguageDropdown(
             .wrapContentSize(Alignment.TopStart)
             .padding(8.dp)
     ) {
-        Button(onClick = { menuExpanded = !menuExpanded }) {
+        TextButton(
+            onClick = { menuExpanded = !menuExpanded },
+        ) {
             Text(text = languages[language] ?: "Loading...")
             Icon(Icons.Default.ArrowDropDown, contentDescription = null)
         }
