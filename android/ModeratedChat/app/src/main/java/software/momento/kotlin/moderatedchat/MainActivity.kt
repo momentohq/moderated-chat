@@ -49,6 +49,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -84,6 +86,7 @@ import java.util.Locale
 import java.util.UUID
 import javax.net.ssl.HttpsURLConnection
 import kotlin.collections.HashMap
+import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
 
 const val baseApiUrl = "https://57zovcekn0.execute-api.us-west-2.amazonaws.com/prod"
@@ -192,16 +195,57 @@ fun ModeratedChatLayout(
     val currentMessages = remember { mutableStateListOf<ChatMessage>() }
     var subscribeJob by remember { mutableStateOf<Job?>(null) }
     var messagesLoaded by remember { mutableStateOf(false) }
+    var loadError by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    if (loadError) {
+        topicClient?.close()
+        cacheClient?.close()
+        LaunchedEffect(key1 = loadError) {
+            if (subscribeJob != null) {
+                println("cancelling subscribe job...")
+                scope.launch {
+                    subscribeJob!!.cancelAndJoin()
+                }
+            }
+        }
+        Column (
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painterResource(id = R.drawable.mochat_mo_peek_up),
+                contentDescription = null
+            )
+            Text(
+                text = "Error loading application data.",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = "Please check your network settings and try again."
+            )
+            Button(
+                onClick = { exitProcess(1) }
+            ) {
+                Text(text = "Exit")
+            }
+        }
+        return
+    }
 
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val scope = rememberCoroutineScope()
+//        val scope = rememberCoroutineScope()
         LanguageDropdown(
             languages = supportedLanguages,
             onLanguagesLoad = {
                 supportedLanguages = it
+            },
+            onLanguageLoadError = {
+                loadError = true
             },
             language = currentLanguage,
             onLanguageChange = { newLanguage ->
@@ -211,24 +255,34 @@ fun ModeratedChatLayout(
                     withContext(Dispatchers.IO) {
                         coroutineScope {
                             launch {
-                                val tokenExpiresInSecs = tokenExpiresAt - (System.currentTimeMillis() / 1000)
-                                println("token expires in $tokenExpiresInSecs")
-                                if (topicClient == null || tokenExpiresInSecs < 10) {
-                                    getClients(userName, userId)
+                                try {
+                                    val tokenExpiresInSecs =
+                                        tokenExpiresAt - (System.currentTimeMillis() / 1000)
+                                    println("token expires in $tokenExpiresInSecs")
+                                    if (topicClient == null || tokenExpiresInSecs < 10) {
+                                        getClients(userName, userId)
+                                    }
+                                } catch (e: Exception) {
+                                    loadError = true
                                 }
                             }
                         }
-                        if (currentLanguage == newLanguage && !messagesLoaded) {
+                        if (currentLanguage == newLanguage) {
                             println("language $currentLanguage not changed. skipping.")
                             return@withContext
                         }
+                        messagesLoaded = false
                         currentLanguage = newLanguage
                         println("language changed to $currentLanguage")
                         currentMessages.clear()
-                        getMessagesForLanguage(languageCode = currentLanguage) {
-                            for (i in 0..<it.count()) {
-                                currentMessages.add(it[i])
+                        try {
+                            getMessagesForLanguage(languageCode = currentLanguage) {
+                                for (i in 0..<it.count()) {
+                                    currentMessages.add(it[i])
+                                }
                             }
+                        } catch (e: Exception) {
+                            loadError = true
                         }
                         messagesLoaded = true
                         println("messages refreshed")
@@ -237,15 +291,20 @@ fun ModeratedChatLayout(
                             subscribeJob!!.cancelAndJoin()
                         }
                         while (true) {
-                            subscribeJob = launch {
-                                topicSubscribe(language = currentLanguage)
-                                {
-                                    val jsonMessage = JSONObject(it)
-                                    val parsedMessage = parseMessage(jsonMessage)
-                                    currentMessages.add(parsedMessage)
-                                    println("message added to current messages list")
+                                subscribeJob = launch {
+                                    try {
+                                        topicSubscribe(language = currentLanguage)
+                                        {
+                                            val jsonMessage = JSONObject(it)
+                                            val parsedMessage = parseMessage(jsonMessage)
+                                            currentMessages.add(parsedMessage)
+                                            println("message added to current messages list")
+                                        }
+                                    } catch (e: Exception) {
+                                        loadError = true
+                                    }
+
                                 }
-                            }
                             val resubscribeAfterSecs = 180L
                             delay(resubscribeAfterSecs * 1000)
                             subscribeJob?.cancelAndJoin()
@@ -516,6 +575,7 @@ fun ChatEntry(
 fun LanguageDropdown(
     languages: Map<String, String>,
     onLanguagesLoad: (Map<String, String>) -> Unit,
+    onLanguageLoadError: () -> Unit,
     language: String,
     onLanguageChange: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -523,7 +583,11 @@ fun LanguageDropdown(
     var menuExpanded by remember { mutableStateOf(false) }
     LaunchedEffect(languages) {
         withContext(Dispatchers.IO) {
-            onLanguagesLoad(getSupportedLanguages())
+            try {
+                onLanguagesLoad(getSupportedLanguages())
+            } catch (e: Exception) {
+                onLanguageLoadError()
+            }
             onLanguageChange("en")
         }
     }
@@ -561,6 +625,9 @@ suspend fun topicSubscribe(
     onMessage: (String) -> Unit
 ) {
     println("Subscribing to chat-$language with $topicClient")
+    if (topicClient == null) {
+        throw RuntimeException("Unable to load topic client.")
+    }
     when (val response = topicClient!!.subscribe("moderator", "chat-$language")) {
         is TopicSubscribeResponse.Subscription -> coroutineScope {
             val subscribeBeginSecs = System.currentTimeMillis() / 1000
