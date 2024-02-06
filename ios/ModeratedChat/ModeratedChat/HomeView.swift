@@ -11,15 +11,25 @@ struct HomeView: View {
             VStack {
                 Text("Enter your username:")
                     .foregroundStyle(.white)
-                TextField("Username", text: $username)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .foregroundColor(Color(red: 37/255, green: 57/255, blue: 43/255))
-                    .padding([.horizontal])
-                    .onSubmit {
-                        isUsernameSet = true
-                        createUser(username: username)
-                    }
+                
                 // TODO: how to restrict username input length and apply profanity filter on it?
+                HStack{
+                    TextField("Username", text: $username)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .foregroundColor(Color(red: 37/255, green: 57/255, blue: 43/255))
+                        .padding([.horizontal])
+                        .disableAutocorrection(true)
+                        .onSubmit {
+                            setUsername()
+                        }
+                    Button(action: setUsername) {
+                        Image("send-icon")
+                            .resizable()
+                            .frame(width: 30.0, height: 30.0, alignment: .leading)
+                    }
+                    .padding([.trailing], 12)
+                }
+                
             }
         }
         .frame(
@@ -30,5 +40,10 @@ struct HomeView: View {
               alignment: .topLeading
             )
         .background(Color(red: 37/225, green: 57/225, blue: 43/225))
+    }
+    
+    func setUsername() {
+        isUsernameSet = true
+        createUser(username: username)
     }
 }
