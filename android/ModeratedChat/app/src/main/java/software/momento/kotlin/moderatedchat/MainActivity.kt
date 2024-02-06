@@ -418,7 +418,7 @@ fun MessageBar(
 
     Row(
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
 
         if (!showImageSizeError) {
@@ -430,7 +430,7 @@ fun MessageBar(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = modifier
                     .weight(1f)
-                    .padding(12.dp)
+                    .padding(4.dp)
             )
             Button(
                 onClick = {
@@ -450,7 +450,8 @@ fun MessageBar(
                         )
                     }
                     message = ""
-                }
+                },
+                modifier = modifier.padding(horizontal = 4.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.send),
