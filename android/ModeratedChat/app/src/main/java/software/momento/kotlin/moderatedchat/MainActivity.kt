@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
-import android.widget.ImageButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -52,7 +51,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -206,38 +204,7 @@ fun ModeratedChatLayout(
     val scope = rememberCoroutineScope()
 
     if (loadError) {
-        topicClient?.close()
-        cacheClient?.close()
-        LaunchedEffect(key1 = loadError) {
-            if (subscribeJob != null) {
-                println("cancelling subscribe job...")
-                scope.launch {
-                    subscribeJob!!.cancelAndJoin()
-                }
-            }
-        }
-        Column (
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Image(
-                painterResource(id = R.drawable.mochat_mo_peek_up),
-                contentDescription = null
-            )
-            Text(
-                text = "Error loading application data.",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = "Please check your network settings and try again."
-            )
-            Button(
-                onClick = { exitProcess(1) }
-            ) {
-                Text(text = "Exit")
-            }
-        }
+        LoadError(subscribeJob = subscribeJob)
         return
     }
 
@@ -245,7 +212,6 @@ fun ModeratedChatLayout(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-//        val scope = rememberCoroutineScope()
         LanguageDropdown(
             languages = supportedLanguages,
             onLanguagesLoad = {
@@ -292,37 +258,31 @@ fun ModeratedChatLayout(
                             loadError = true
                         }
                         messagesLoaded = true
-                        println("messages refreshed")
                         if (subscribeJob != null) {
-                            println("cancelling existing subscribe job")
                             subscribeJob!!.cancelAndJoin()
                         }
                         while (true) {
-                                subscribeJob = launch {
-                                    try {
-                                        topicSubscribe(language = currentLanguage)
-                                        {
-                                            val jsonMessage = JSONObject(it)
-                                            val parsedMessage = parseMessage(jsonMessage)
-                                            currentMessages.add(parsedMessage)
-                                            println("message added to current messages list")
-                                        }
-                                    } catch (e: RuntimeException) {
-                                        // TODO: getting a RuntimeException about grpc channel not
-                                        //  being closed correctly.
-                                        println("ignoring runtimeexception")
-                                    } catch (e: Exception) {
-                                        throw e
-                                        println("topicSubscribe setting loadError")
-                                        loadError = true
+                            subscribeJob = launch {
+                                try {
+                                    topicSubscribe(language = currentLanguage)
+                                    {
+                                        val jsonMessage = JSONObject(it)
+                                        val parsedMessage = parseMessage(jsonMessage)
+                                        currentMessages.add(parsedMessage)
                                     }
-
+                                } catch (e: RuntimeException) {
+                                    // TODO: getting a RuntimeException about grpc channel not
+                                    //  being closed correctly.
+                                } catch (e: Exception) {
+                                    loadError = true
                                 }
+
+                            }
                             val resubscribeAfterSecs = 180L
                             delay(resubscribeAfterSecs * 1000)
+                            // resubscribe after delay
                             subscribeJob?.cancelAndJoin()
                             getClients(userName, userId)
-                            print("resubscribing")
                         }
                     }
                 }
@@ -401,7 +361,7 @@ fun MessageBar(
             }
             imageScope.launch {
                 withContext(Dispatchers.IO) {
-                    val imageId = "image-${UUID.randomUUID().toString()}"
+                    val imageId = "image-${UUID.randomUUID()}"
                     val imageData = Base64.getEncoder().encodeToString(imageBytes)
                     val imageSetResponse = cacheClient?.set(
                         "moderator", imageId, imageData
@@ -439,13 +399,12 @@ fun MessageBar(
                     .weight(1f)
                     .padding(4.dp)
             )
-            Button(
+            TextButton(
                 onClick = {
                     if (message.isEmpty()) {
-                        return@Button
+                        return@TextButton
                     }
                     focusManager.clearFocus()
-                    println("sending message $message")
                     // copy message value to send to publish
                     val publishMessage = message
                     imageScope.launch {
@@ -458,14 +417,14 @@ fun MessageBar(
                     }
                     message = ""
                 },
-                modifier = modifier.padding(horizontal = 4.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.send),
                     contentDescription = "Send",
+                    modifier = Modifier.size(40.dp)
                 )
             }
-            Button(
+            TextButton(
                 onClick = {
                     launcher.launch("image/*")
                 }
@@ -473,6 +432,7 @@ fun MessageBar(
                 Image(
                     painter = painterResource(id = R.drawable.attach),
                     contentDescription = "Upload Image",
+                    modifier = Modifier.size(40.dp)
                 )
             }
         } else {
@@ -508,9 +468,8 @@ fun MessageList(
                     onLoad = {
                         if (
                             !lazyColumnListState.isScrollInProgress
-                            || !lazyColumnListState.canScrollForward
+                            && !lazyColumnListState.canScrollForward
                         ) {
-                            println("scrolling to bottom")
                             scope.launch {
                                 lazyColumnListState.scrollToItem(messages.count())
                             }
@@ -540,16 +499,12 @@ fun ChatEntry(
     LaunchedEffect(message.message) {
         if (message.messageType == "image") {
             if (message.message.startsWith("image-")) {
-                println("fetching image from cache by id")
-                val getResponse = cacheClient?.get("moderator", message.message)
-                println("get response: $getResponse")
-                when (getResponse) {
+                when (val getResponse = cacheClient?.get("moderator", message.message)) {
                     is GetResponse.Error -> println("Error getting image: $getResponse")
                     is GetResponse.Miss -> println("Cache miss g=fetching key ${message.message}")
                     is GetResponse.Hit -> imageBytes = Base64.getDecoder().decode(getResponse.value)
                     null -> println("get null response for image")
                 }
-                println()
             } else {
                 imageBytes = Base64.getDecoder().decode(message.message)
             }
@@ -577,7 +532,6 @@ fun ChatEntry(
                     onTextLayout = { onLoad() }
                 )
             } else {
-                println("rendering image...")
                 val bytes = imageBytes
                 val request = ImageRequest.Builder(context = LocalContext.current)
                     .data(bytes)
@@ -644,6 +598,44 @@ fun LanguageDropdown(
     }
 }
 
+@Composable
+fun LoadError(
+    subscribeJob: Job?
+) {
+    val scope = rememberCoroutineScope()
+    topicClient?.close()
+    cacheClient?.close()
+    LaunchedEffect(true) {
+        if (subscribeJob != null) {
+            scope.launch {
+                subscribeJob.cancelAndJoin()
+            }
+        }
+    }
+    Column (
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            painterResource(id = R.drawable.mochat_mo_peek_up),
+            contentDescription = null
+        )
+        Text(
+            text = "Error loading application data.",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = "Please check your network settings and try again."
+        )
+        Button(
+            onClick = { exitProcess(1) }
+        ) {
+            Text(text = "Exit")
+        }
+    }
+}
+
 suspend fun topicSubscribe(
     language: String,
     onMessage: (String) -> Unit
@@ -658,14 +650,11 @@ suspend fun topicSubscribe(
             launch {
                 response.collect { item ->
                     yield()
-                    println("subscribed for ${(System.currentTimeMillis() / 1000) - subscribeBeginSecs} seconds")
                     when (item) {
                         is TopicMessage.Text -> {
-                            println("Received text message: ${item.value}")
                             onMessage(item.value)
                         }
                         is TopicMessage.Binary -> {
-                            println("Received binary message: ${item.value}")
                             onMessage("${item.value}")
                         }
                         is TopicMessage.Error -> throw RuntimeException(
@@ -705,7 +694,6 @@ private fun getApiToken(username: String, id: UUID) {
             val jsonObject = JSONObject(response.toString())
             momentoApiToken = jsonObject.getString("token")
             tokenExpiresAt = jsonObject.getLong("expiresAtEpoch")
-            println("api token expires in ${tokenExpiresAt - (System.currentTimeMillis() / 1000)} secs")
         }
     }
 }
@@ -717,7 +705,6 @@ private fun getClients(
     topicClient?.close()
     cacheClient?.close()
 
-    // TODO: move api token to remember and pass in callback
     getApiToken(userName, userId)
     val credentialProvider =
         CredentialProvider.fromString(momentoApiToken)
@@ -730,7 +717,6 @@ private fun getClients(
         configuration = Configurations.Laptop.latest,
         itemDefaultTtl = (24 * 60 * 60).seconds
     )
-    println("got new topic client $topicClient and cache client $cacheClient")
 }
 
 private fun getSupportedLanguages(): HashMap<String, String> {
@@ -755,7 +741,6 @@ private fun getMessagesForLanguage(
     println("Getting messages for $languageCode")
     val apiUrl = "$baseApiUrl/v1/translate/latestMessages/$languageCode"
     val messages = URL(apiUrl).readText()
-    println("received ${messages.length} bytes")
     val jsonObject = JSONObject(messages)
     val messagesFromJson = jsonObject.getJSONArray("messages")
     val messageList = mutableListOf<ChatMessage>()
@@ -810,6 +795,7 @@ private suspend fun publishMessage(
     )
     val jsonMessage = gson.toJson(message)
     println("sending json message: $jsonMessage")
+    // TODO: figure out how to handle publish errors here
     val publishResponse = topicClient!!.publish(
         cacheName = "moderator",
         topicName = "chat-publish",
