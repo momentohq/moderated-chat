@@ -76,6 +76,7 @@ import software.momento.kotlin.sdk.config.TopicConfigurations
 import software.momento.kotlin.sdk.responses.cache.GetResponse
 import software.momento.kotlin.sdk.responses.cache.SetResponse
 import software.momento.kotlin.sdk.responses.topic.TopicMessage
+import software.momento.kotlin.sdk.responses.topic.TopicPublishResponse
 import software.momento.kotlin.sdk.responses.topic.TopicSubscribeResponse
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -182,7 +183,7 @@ fun ModeratedChatLogin(
         )
         Button(
             modifier = modifier,
-            onClick = { onLogin(userNameField) }
+            onClick = { onLogin(userNameField.trim()) }
         ) {
             Text("Continue")
         }
@@ -331,6 +332,7 @@ fun MessageBar(
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var imageBytes by remember { mutableStateOf<ByteArray?>(null) }
     var showImageSizeError by remember { mutableStateOf(false) }
+    var showPublishError by remember { mutableStateOf(false) }
     val imageScope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -353,8 +355,6 @@ fun MessageBar(
                 imageScope.launch {
                     coroutineScope {
                         showImageSizeError = true
-                        delay(2_000)
-                        showImageSizeError = false
                     }
                 }
                 return@rememberLauncherForActivityResult
@@ -376,6 +376,7 @@ fun MessageBar(
                         userId = userId,
                         messageType = "image",
                         chatMessage = imageId,
+                        onPublishError = { showPublishError = true },
                         currentLanguage = currentLanguage
                     )
                 }
@@ -387,8 +388,29 @@ fun MessageBar(
         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-
-        if (!showImageSizeError) {
+        if (showImageSizeError) {
+            LaunchedEffect(showImageSizeError) {
+                delay(2_000)
+                showImageSizeError = false
+            }
+            Text(
+                text = "Error: Image must be below 1MB",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.error
+            )
+        } else if (showPublishError) {
+            LaunchedEffect(showPublishError) {
+                delay(2_000)
+                showPublishError = false
+            }
+            Text(
+                text = "Error publishing message, please try again",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.error
+            )
+        } else {
             TextField(
                 value = message,
                 onValueChange = { message = it },
@@ -406,12 +428,15 @@ fun MessageBar(
                     }
                     focusManager.clearFocus()
                     // copy message value to send to publish
-                    val publishMessage = message
+                    val publishMessage = message.trim()
                     imageScope.launch {
                         publishMessage(
                             userName = userName,
                             userId = userId,
                             currentLanguage = currentLanguage,
+                            onPublishError = {
+                                showPublishError = true
+                            },
                             chatMessage = publishMessage
                         )
                     }
@@ -435,14 +460,6 @@ fun MessageBar(
                     modifier = Modifier.size(40.dp)
                 )
             }
-        } else {
-            Text(
-                text = "Error: Image must be below 1MB",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Red
-            )
-
         }
     }
 }
@@ -776,6 +793,7 @@ private suspend fun publishMessage(
     userId: UUID,
     currentLanguage: String,
     chatMessage: String,
+    onPublishError: () -> Unit,
     messageType: String = "text"
 ) {
     val tokenExpiresInSecs = tokenExpiresAt - (System.currentTimeMillis() / 1000)
@@ -801,5 +819,8 @@ private suspend fun publishMessage(
         topicName = "chat-publish",
         value = jsonMessage
     )
-    println("publish response is $publishResponse")
+    when (publishResponse) {
+        is TopicPublishResponse.Success -> println("publish succeeded")
+        is TopicPublishResponse.Error -> onPublishError()
+    }
 }
