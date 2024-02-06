@@ -318,17 +318,22 @@ fun ModeratedChatLayout(
             },
             modifier = modifier.fillMaxWidth()
         )
-        if (currentMessages.size == 0) {
-            Text(
-                text = "Loading messages . . . ",
-                modifier = modifier.weight(1f)
-            )
+        if (currentMessages.size == 0)
+            if (!messagesLoaded) {
+                Text(
+                    text = "Loading messages . . . ",
+                    modifier = modifier.weight(1f)
+                )
+            } else {
+                Text(
+                    text = "There are no messages in the chat. Send a message to get started!",
+                    modifier = modifier.weight(1f)
+
+                )
         } else {
             MessageList(
                 currentUserId = userId,
                 messages = currentMessages,
-//                listState = lazyColumnListState,
-//                onMessagesLoaded = {},
                 modifier = Modifier
                     .weight(1f)
                     .padding(4.dp)
@@ -460,9 +465,10 @@ fun MessageBar(
             }
         } else {
             Text(
-                text = "Error: Image must be below 70kb",
+                text = "Error: Image must be below 1MB",
                 fontSize = 20.sp,
-                color = Color.Red,
+                fontWeight = FontWeight.Bold,
+                color = Color.Red
             )
 
         }
