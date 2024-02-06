@@ -1,5 +1,7 @@
 package software.momento.kotlin.moderatedchat
 
+import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Bundle
@@ -358,17 +360,20 @@ fun MessageBar(
 
     val focusManager = LocalFocusManager.current
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = object: ActivityResultContracts.GetContent() {
+            override fun createIntent(context: Context, input: String): Intent {
+                return super
+                    .createIntent(context, input)
+                    .putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/png", "image/jpg", "image/jpeg"))
+            }
+        }
     ) { uri: Uri? ->
         imageUri = uri
-        println("====> Got image: $imageUri")
         if (imageUri != null) {
             val item = context.contentResolver.openInputStream(imageUri!!)
             imageBytes = item?.readBytes()
             item?.close()
-            println("Got ${imageBytes?.size} bytes")
-            if (imageBytes != null && imageBytes!!.size > 70_000) {
-                println("need to pop up an error for image size here")
+            if (imageBytes != null && imageBytes!!.size > 1_000_000) {
                 imageScope.launch {
                     coroutineScope {
                         showImageSizeError = true
@@ -378,7 +383,6 @@ fun MessageBar(
                 }
                 return@rememberLauncherForActivityResult
             }
-            println(Base64.getEncoder().encodeToString(imageBytes))
             imageScope.launch {
                 withContext(Dispatchers.IO) {
                     val imageId = "image-${UUID.randomUUID().toString()}"
