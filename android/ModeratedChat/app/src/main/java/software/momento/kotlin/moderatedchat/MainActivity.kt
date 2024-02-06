@@ -168,7 +168,11 @@ fun ModeratedChatLogin(
             painterResource(id = R.drawable.mochat_mo_peek_up),
             contentDescription = null
         )
-        Text("Welcome to the Momento Moderated Chat!")
+        Text(
+            text = "Welcome to Momento Moderated Chat!",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
         TextField(
             value = userNameField,
             label = { Text("Choose your username...") },
