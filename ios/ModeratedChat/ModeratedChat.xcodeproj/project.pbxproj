@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		083F34212B743B6A00489C8D /* Profanity Filter in Frameworks */ = {isa = PBXBuildFile; productRef = 083F34202B743B6A00489C8D /* Profanity Filter */; };
 		08ABEF462B62F31A00A31A34 /* MessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08ABEF452B62F31A00A31A34 /* MessageStore.swift */; };
 		08B3F11E2B572889003D2CB3 /* ModeratedChatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F11D2B572889003D2CB3 /* ModeratedChatApp.swift */; };
 		08B3F1202B572889003D2CB3 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F11F2B572889003D2CB3 /* ContentView.swift */; };
@@ -45,6 +46,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				08B3F1352B5890ED003D2CB3 /* Momento in Frameworks */,
+				083F34212B743B6A00489C8D /* Profanity Filter in Frameworks */,
 				08B3F13C2B59B1DA003D2CB3 /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -114,6 +116,7 @@
 			packageProductDependencies = (
 				08B3F1342B5890ED003D2CB3 /* Momento */,
 				08B3F13B2B59B1DA003D2CB3 /* Alamofire */,
+				083F34202B743B6A00489C8D /* Profanity Filter */,
 			);
 			productName = ModeratedChat;
 			productReference = 08B3F11A2B572889003D2CB3 /* ModeratedChat.app */;
@@ -146,6 +149,7 @@
 			packageReferences = (
 				08B3F1332B5890ED003D2CB3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 				08B3F13A2B59B1DA003D2CB3 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				083F341F2B743B6A00489C8D /* XCRemoteSwiftPackageReference "profanitiy-filter-swift" */,
 			);
 			productRefGroup = 08B3F11B2B572889003D2CB3 /* Products */;
 			projectDirPath = "";
@@ -394,6 +398,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		083F341F2B743B6A00489C8D /* XCRemoteSwiftPackageReference "profanitiy-filter-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jvanbrunt/profanitiy-filter-swift";
+			requirement = {
+				kind = exactVersion;
+				version = 0.0.2;
+			};
+		};
 		08B3F1332B5890ED003D2CB3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/momentohq/client-sdk-swift";
@@ -413,6 +425,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		083F34202B743B6A00489C8D /* Profanity Filter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 083F341F2B743B6A00489C8D /* XCRemoteSwiftPackageReference "profanitiy-filter-swift" */;
+			productName = "Profanity Filter";
+		};
 		08B3F1342B5890ED003D2CB3 /* Momento */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 08B3F1332B5890ED003D2CB3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;

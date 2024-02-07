@@ -1,8 +1,11 @@
 import SwiftUI
+import Profanity_Filter
 
 struct HomeView: View {
     @State var isUsernameSet: Bool = false
     @State private var username: String = ""
+    @State private var showWarning: Bool = false
+    @State private var profaneUsernameWarning: String = "Username contains profanity, please enter a different username"
     
     var body: some View {
         VStack {
@@ -12,7 +15,6 @@ struct HomeView: View {
                 Text("Enter your username:")
                     .foregroundStyle(.white)
                 
-                // TODO: how to apply profanity filter on it?
                 HStack{
                     TextField("Username", text: $username)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -30,6 +32,10 @@ struct HomeView: View {
                     .padding([.trailing], 12)
                 }
                 
+                if showWarning {
+                    Text(profaneUsernameWarning)
+                        .foregroundStyle(.red)
+                }
             }
         }
         .frame(
@@ -43,7 +49,13 @@ struct HomeView: View {
     }
     
     func setUsername() {
-        isUsernameSet = true
-        createUser(username: username)
+        let result = ProfanityFilter().containsProfanity(text: username)
+        if result.containsProfanity == true {
+            username = ""
+            showWarning = true
+        } else {
+            isUsernameSet = true
+            createUser(username: username)
+        }
     }
 }

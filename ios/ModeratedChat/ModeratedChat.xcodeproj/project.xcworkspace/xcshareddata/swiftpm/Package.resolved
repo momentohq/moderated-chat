@@ -28,6 +28,15 @@
       }
     },
     {
+      "identity" : "profanitiy-filter-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jvanbrunt/profanitiy-filter-swift",
+      "state" : {
+        "revision" : "24d293feae59ad1f29d7efa3194eb193aaf78878",
+        "version" : "0.0.2"
+      }
+    },
+    {
       "identity" : "swift-atomics",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-atomics.git",
