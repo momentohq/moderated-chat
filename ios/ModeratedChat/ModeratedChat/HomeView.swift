@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
-    @Binding var isUsernameSet: Bool
+    @State var isUsernameSet: Bool = false
     @State private var username: String = ""
     
     var body: some View {
@@ -12,7 +12,7 @@ struct HomeView: View {
                 Text("Enter your username:")
                     .foregroundStyle(.white)
                 
-                // TODO: how to restrict username input length and apply profanity filter on it?
+                // TODO: how to apply profanity filter on it?
                 HStack{
                     TextField("Username", text: $username)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
