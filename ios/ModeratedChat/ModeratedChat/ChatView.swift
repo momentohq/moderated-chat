@@ -215,14 +215,13 @@ struct ChatItemView: View {
     }
     
     var body: some View {
-        HStack {
+        HStack(alignment: .bottom) {
             Text("\(String(self.chatMessageEvent.user.username.first!))")
                 .foregroundColor(forestColor)
                 .fontWeight(.bold)
                 .padding()
                 .background(getUsernameColor(username: chatMessageEvent.user.username))
                 .clipShape(Circle())
-                .frame(alignment: .bottomLeading)
             
             if chatMessageEvent.messageType == .image, let nonNilImage = self.image {
                 HStack {
@@ -234,11 +233,12 @@ struct ChatItemView: View {
                         .frame(maxWidth: 300, maxHeight: .infinity, alignment: .leading)
                         .background(
                             translationApi.currentUsername == chatMessageEvent.user.username ? mintColor : lightSquirrelColor,
-                            in: RoundedRectangle(cornerRadius: 25.0)
+                            in: UnevenRoundedRectangle(
+                                    cornerRadii: .init(topLeading: 25, bottomTrailing: 25, topTrailing: 25)
+                                )
                         )
                 }
                 .padding([.vertical], 12)
-                .frame(alignment: .bottom)
                 
             }
             else if chatMessageEvent.messageType == .text {
@@ -250,11 +250,12 @@ struct ChatItemView: View {
                         .foregroundColor(forestColor)
                         .background(
                             translationApi.currentUsername == chatMessageEvent.user.username ? mintColor : lightSquirrelColor,
-                            in: RoundedRectangle(cornerRadius: 25.0)
+                            in: UnevenRoundedRectangle(
+                                    cornerRadii: .init(topLeading: 25, bottomTrailing: 25, topTrailing: 25)
+                                )
                         )
                 }
-                .padding([.vertical], 12)
-                .frame(alignment: .bottom)
+                .padding([.top], 12)
             }
             
             Spacer()
