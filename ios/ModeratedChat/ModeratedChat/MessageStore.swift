@@ -52,7 +52,7 @@ class MessageStore: ObservableObject {
     
     @MainActor
     func getImageMessage(message: String) async -> String? {
-        if message.count == 42 && message.contains("image-") {
+        if message.contains("image-") {
             // Received a message ID, must fetch message from cache
             if let nonNilCacheClient = momentoClients.cacheClient {
                 let getImage = await nonNilCacheClient.get(
