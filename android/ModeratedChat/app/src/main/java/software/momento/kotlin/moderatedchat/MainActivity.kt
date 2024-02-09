@@ -336,7 +336,6 @@ fun ModeratedChatLayout(
         } else {
             MessageList(
                 currentUserId = userId,
-                userName = userName,
                 messages = currentMessages,
                 modifier = Modifier
                     .weight(1f)
@@ -501,7 +500,6 @@ fun MessageBar(
 @Composable
 fun MessageList(
     currentUserId: UUID,
-    userName: String,
     messages: List<ChatMessage>,
     modifier: Modifier = Modifier
 ) {
@@ -516,7 +514,6 @@ fun MessageList(
             key(item.message) {
                 ChatEntry(
                     currentUserId = currentUserId,
-                    userName = userName,
                     message = item,
                     onLoad = {
                         if (
@@ -537,12 +534,11 @@ fun MessageList(
 @Composable
 fun ChatEntry(
     currentUserId: UUID,
-    userName: String,
     message: ChatMessage,
     onLoad: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isCurrentUser = currentUserId.toString() == message.user.id || userName == message.user.name
+    val isCurrentUser = currentUserId.toString() == message.user.id
     val color = if (isCurrentUser) {
         Color(0xFF00C88C)
     } else {
