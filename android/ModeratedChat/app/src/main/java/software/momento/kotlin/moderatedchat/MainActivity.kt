@@ -10,15 +10,18 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,6 +31,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -52,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -172,8 +177,10 @@ fun ModeratedChatLogin(
         Text(
             text = "Welcome to Momento Moderated Chat!",
             fontSize = 20.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = Color.White
         )
+        Spacer(modifier = Modifier.height(16.dp))
         TextField(
             value = userNameField,
             label = { Text("Choose your username...") },
@@ -182,9 +189,10 @@ fun ModeratedChatLogin(
                 userNameField = it
             }
         )
+        Spacer(modifier = Modifier.height(16.dp))
         Button(
             modifier = modifier,
-            onClick = { onLogin(userNameField.trim()) }
+            onClick = { onLogin(userNameField.trim()) },
         ) {
             Text("Continue")
         }
@@ -214,87 +222,109 @@ fun ModeratedChatLayout(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        LanguageDropdown(
-            languages = supportedLanguages,
-            onLanguagesLoad = {
-                supportedLanguages = it
-            },
-            onLanguageLoadError = {
-                loadError = true
-            },
-            language = currentLanguage,
-            onLanguageChange = { newLanguage ->
-                println("onLanguage change: $currentLanguage -> $newLanguage")
-                // TODO: not sure how much of this is necessary, but the withContext def is
-                scope.launch {
-                    withContext(Dispatchers.IO) {
-                        coroutineScope {
-                            launch {
-                                try {
-                                    val tokenExpiresInSecs =
-                                        tokenExpiresAt - (System.currentTimeMillis() / 1000)
-                                    println("token expires in $tokenExpiresInSecs")
-                                    if (topicClient == null || tokenExpiresInSecs < 10) {
-                                        getClients(userName, userId)
+        Row (
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF25392B))
+        ) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Image(
+                painterResource(id = R.drawable.mochat_mo_peek_up),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Welcome to Momento Chat!",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            LanguageDropdown(
+                languages = supportedLanguages,
+                onLanguagesLoad = {
+                    supportedLanguages = it
+                },
+                onLanguageLoadError = {
+                    loadError = true
+                },
+                language = currentLanguage,
+                onLanguageChange = { newLanguage ->
+                    println("onLanguage change: $currentLanguage -> $newLanguage")
+                    // TODO: not sure how much of this is necessary, but the withContext def is
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            coroutineScope {
+                                launch {
+                                    try {
+                                        val tokenExpiresInSecs =
+                                            tokenExpiresAt - (System.currentTimeMillis() / 1000)
+                                        println("token expires in $tokenExpiresInSecs")
+                                        if (topicClient == null || tokenExpiresInSecs < 10) {
+                                            getClients(userName, userId)
+                                        }
+                                    } catch (e: Exception) {
+                                        loadError = true
                                     }
-                                } catch (e: Exception) {
-                                    loadError = true
                                 }
                             }
-                        }
-                        if (currentLanguage == newLanguage) {
-                            println("language $currentLanguage not changed. skipping.")
-                            return@withContext
-                        }
-                        messagesLoaded = false
-                        currentLanguage = newLanguage
-                        println("language changed to $currentLanguage")
-                        currentMessages.clear()
-                        try {
-                            getMessagesForLanguage(languageCode = currentLanguage) {
-                                for (i in 0..<it.count()) {
-                                    currentMessages.add(it[i])
-                                }
+                            if (currentLanguage == newLanguage) {
+                                println("language $currentLanguage not changed. skipping.")
+                                return@withContext
                             }
-                        } catch (e: Exception) {
-                            loadError = true
-                        }
-                        messagesLoaded = true
-                        if (subscribeJob != null) {
-                            subscribeJob!!.cancelAndJoin()
-                        }
-                        while (true) {
-                            subscribeJob = launch {
-                                try {
-                                    topicSubscribe(language = currentLanguage)
-                                    {
-                                        val jsonMessage = JSONObject(it)
-                                        val parsedMessage = parseMessage(jsonMessage)
-                                        currentMessages.add(parsedMessage)
+                            messagesLoaded = false
+                            currentLanguage = newLanguage
+                            println("language changed to $currentLanguage")
+                            currentMessages.clear()
+                            try {
+                                getMessagesForLanguage(languageCode = currentLanguage) {
+                                    for (i in 0..<it.count()) {
+                                        currentMessages.add(it[i])
                                     }
-                                } catch (e: RuntimeException) {
-                                    // TODO: getting a RuntimeException about grpc channel not
-                                    //  being closed correctly.
-                                } catch (e: Exception) {
-                                    loadError = true
                                 }
+                            } catch (e: Exception) {
+                                loadError = true
+                            }
+                            messagesLoaded = true
+                            if (subscribeJob != null) {
+                                subscribeJob!!.cancelAndJoin()
+                            }
+                            while (true) {
+                                subscribeJob = launch {
+                                    try {
+                                        topicSubscribe(language = currentLanguage)
+                                        {
+                                            val jsonMessage = JSONObject(it)
+                                            val parsedMessage = parseMessage(jsonMessage)
+                                            currentMessages.add(parsedMessage)
+                                        }
+                                    } catch (e: RuntimeException) {
+                                        // TODO: getting a RuntimeException about grpc channel not
+                                        //  being closed correctly.
+                                    } catch (e: Exception) {
+                                        loadError = true
+                                    }
 
+                                }
+                                val resubscribeAfterSecs = 180L
+                                delay(resubscribeAfterSecs * 1000)
+                                // resubscribe after delay
+                                subscribeJob?.cancelAndJoin()
+                                getClients(userName, userId)
                             }
-                            val resubscribeAfterSecs = 180L
-                            delay(resubscribeAfterSecs * 1000)
-                            // resubscribe after delay
-                            subscribeJob?.cancelAndJoin()
-                            getClients(userName, userId)
                         }
                     }
-                }
-            },
-            modifier = modifier.fillMaxWidth()
-        )
+                },
+                modifier = modifier.fillMaxWidth(),
+            )
+        }
+        
         if (currentMessages.size == 0)
             if (!messagesLoaded) {
                 Text(
                     text = "Loading messages . . . ",
+                    color = Color.White,
                     modifier = modifier.weight(1f)
                 )
             } else {
@@ -426,6 +456,17 @@ fun MessageBar(
             )
             TextButton(
                 onClick = {
+                    launcher.launch("image/*")
+                }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.attach),
+                    contentDescription = "Upload Image",
+                    modifier = Modifier.size(40.dp)
+                )
+            }
+            TextButton(
+                onClick = {
                     if (message.isEmpty()) {
                         return@TextButton
                     }
@@ -449,17 +490,6 @@ fun MessageBar(
                 Image(
                     painter = painterResource(id = R.drawable.send),
                     contentDescription = "Send",
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-            TextButton(
-                onClick = {
-                    launcher.launch("image/*")
-                }
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.attach),
-                    contentDescription = "Upload Image",
                     modifier = Modifier.size(40.dp)
                 )
             }
@@ -508,11 +538,13 @@ fun ChatEntry(
     onLoad: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val color = if (currentUserId.toString() == message.user.id) {
-        MaterialTheme.colorScheme.primary
+    val isCurrentUser = currentUserId.toString() == message.user.id
+    val color = if (isCurrentUser) {
+        Color(0xFF00C88C)
     } else {
-        MaterialTheme.colorScheme.secondary
+        Color(0xFFE1D9D5)
     }
+
     val sdf = java.text.SimpleDateFormat("HH:mm a", Locale.US)
     val parsedDate = sdf.format(java.util.Date(message.timestamp))
     var imageBytes by remember { mutableStateOf<ByteArray?>(null) }
@@ -530,6 +562,7 @@ fun ChatEntry(
             }
         }
     }
+
     Surface(
         color = color,
         shape = RoundedCornerShape(8.dp),
@@ -539,17 +572,30 @@ fun ChatEntry(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp)
+                .padding(8.dp)
         ) {
-            Text(
-                text = "${message.user.name} - $parsedDate",
-                modifier = modifier
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = message.user.name,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = parsedDate,
+                    color = Color.Black
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
             if (message.messageType == "text") {
                 Text(
                     text = message.message,
-                    modifier = modifier,
-                    onTextLayout = { onLoad() }
+                    modifier = modifier.padding(horizontal = 5.dp),
+                    onTextLayout = { onLoad() },
+                    color = Color.Black
                 )
             } else {
                 val bytes = imageBytes
@@ -566,6 +612,7 @@ fun ChatEntry(
         }
     }
 }
+
 
 @Composable
 fun LanguageDropdown(
@@ -590,14 +637,14 @@ fun LanguageDropdown(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .wrapContentSize(Alignment.TopStart)
+            .wrapContentSize(Alignment.TopEnd)
             .padding(8.dp)
     ) {
         TextButton(
             onClick = { menuExpanded = !menuExpanded },
         ) {
-            Text(text = languages[language] ?: "Loading...")
-            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+            Text(text = languages[language] ?: "Loading...", color = Color.White)
+            Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.White)
         }
         DropdownMenu(
             expanded = menuExpanded,
