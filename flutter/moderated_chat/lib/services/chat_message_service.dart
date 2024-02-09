@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:moderated_chat/services/auth_service.dart';
 import 'package:momento/momento.dart';
+import 'package:uuid/uuid.dart';
 
 import '../config.dart';
 import '../models/chat_message.dart';
@@ -13,8 +15,8 @@ class ChatMessageService {
   final UserService _userService;
   late TopicClient _topicClient;
   late CacheClient _cacheClient;
-  final StreamController<ChatMessage> _messageController =
-      StreamController<ChatMessage>.broadcast();
+  final StreamController<List<ChatMessage>> _messageController =
+      StreamController<List<ChatMessage>>.broadcast();
   String _currentLanguage = "en";
   TopicSubscription? _currentSubscription;
 
@@ -51,7 +53,7 @@ class ChatMessageService {
         });
   }
 
-  Stream<ChatMessage> get messages => _messageController.stream;
+  Stream<List<ChatMessage>> get messages => _messageController.stream;
 
   Future<void> changeLanguage(String language) async {
     unsubscribe();
@@ -73,6 +75,42 @@ class ChatMessageService {
         return true;
       case TopicPublishError():
         print("Error on publish: ${result.message}");
+        return false;
+    }
+  }
+
+  Future<bool> publishImage(Uint8List imageBytes) async {
+    if (imageBytes.length > 1000000) {
+      return false;
+    }
+
+    final imageId = "image-${const Uuid().v4()}";
+    final String base64Image = base64Encode(imageBytes);
+    final SetResponse imageSetResponse =
+        await _cacheClient.set("moderator", imageId, base64Image);
+    switch (imageSetResponse) {
+      case SetError():
+        print("Error publishing image: ${imageSetResponse.message}");
+        return false;
+      case SetSuccess():
+        break;
+      default:
+        return false;
+    }
+
+    final chatUser = _userService.getUser();
+    final chatMessage = ChatMessage(DateTime.now().millisecondsSinceEpoch,
+        "image", imageId, _currentLanguage, chatUser.name, chatUser.id);
+
+    final jsonMessage = jsonEncode(chatMessage.toJson());
+    final result =
+        await _topicClient.publish("moderator", "chat-publish", jsonMessage);
+    switch (result) {
+      case TopicPublishSuccess():
+        print("Successfully published image");
+        return true;
+      case TopicPublishError():
+        print("Error publishing image: ${result.message}");
         return false;
     }
   }
@@ -101,7 +139,8 @@ class ChatMessageService {
                   print(
                       "Received non-text message from stream chat-$_currentLanguage");
                 }
-                _messageController.sink.add(chatMessage);
+                downloadImage(chatMessage).then((completedMessage) =>
+                    _messageController.sink.add([completedMessage]));
               } catch (e) {
                 print("Error parsing message: $e");
               }
@@ -131,6 +170,7 @@ class ChatMessageService {
     final response = await http.get(Uri.parse(apiUrl));
     final jsonObject = jsonDecode(utf8.decode(response.bodyBytes));
     final messagesFromJson = jsonObject['messages'];
+    final List<ChatMessage> messageList = [];
     for (var i = 0; i < messagesFromJson.length; i++) {
       final message = messagesFromJson[i];
       final chatMessage = ChatMessage.fromJson(message);
@@ -139,7 +179,37 @@ class ChatMessageService {
       } else {
         print("Received non-text message from load");
       }
-      _messageController.sink.add(chatMessage);
+      final ChatMessage completedMessage = await downloadImage(chatMessage);
+      messageList.add(completedMessage);
+    }
+    _messageController.sink.add(messageList);
+  }
+
+  Future<ChatMessage> downloadImage(ChatMessage chatMessage) async {
+    // Text messages or messages containing their images don't need special treatment
+    if (chatMessage.messageType != "image" ||
+        !chatMessage.message.startsWith("image-")) {
+      return chatMessage;
+    }
+
+    final imageId = chatMessage.message;
+    final cacheResponse =
+        await _cacheClient.get("moderator", chatMessage.message);
+    switch (cacheResponse) {
+      case GetHit():
+        return ChatMessage(
+            chatMessage.timestamp,
+            chatMessage.messageType,
+            cacheResponse.value,
+            chatMessage.sourceLanguage,
+            chatMessage.username,
+            chatMessage.id);
+      case GetMiss():
+        print("Cache miss for image: $imageId");
+        return chatMessage;
+      case GetError():
+        print("Error fetching image: ${cacheResponse.message}");
+        return chatMessage;
     }
   }
 
