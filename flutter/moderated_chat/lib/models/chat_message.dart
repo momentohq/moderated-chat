@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'chat_user.dart';
-
 @immutable
 class ChatMessage {
   final int timestamp;
@@ -26,11 +24,11 @@ class ChatMessage {
   }
 
   Map<String, dynamic> toJson() => {
-    'timestamp': timestamp,
-    'messageType': messageType,
-    'message': message,
-    'sourceLanguage': sourceLanguage,
-    'username': username,
-    'id': id,
-  };
+        'timestamp': timestamp,
+        'messageType': messageType,
+        'message': message,
+        'sourceLanguage': sourceLanguage,
+        'username': username,
+        'id': id,
+      };
 }

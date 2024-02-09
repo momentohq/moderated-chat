@@ -1,18 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:moderated_chat/providers/chat_message_provider.dart';
-import 'package:moderated_chat/services/language_service.dart';
 import 'package:moderated_chat/widgets/gradient_background.dart';
 import 'package:moderated_chat/widgets/language_dropdown.dart';
 import 'package:provider/provider.dart';
 
-class ChatScreen extends StatelessWidget {
-  ChatScreen({super.key});
+class ChatScreen extends StatefulWidget {
+  const ChatScreen({super.key});
 
   final String title = "Flutter Momento Moderated Chat";
 
+  @override
+  State<StatefulWidget> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _textInputController = TextEditingController();
-  final scrollController = ScrollController();
+  final _scrollController = ScrollController();
+
+  void _submitMessage(ChatMessageProvider messageProvider) async {
+    final String message = _textInputController.text;
+    if (message.isNotEmpty) {
+      messageProvider.publishMessage(message);
+      _textInputController.clear();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final messageProvider =
+        Provider.of<ChatMessageProvider>(context, listen: false);
+    messageProvider.addListener(() {
+      final bool isAtBottom = _scrollController.offset >=
+          _scrollController.position.maxScrollExtent;
+
+      if (isAtBottom) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +74,9 @@ class ChatScreen extends StatelessWidget {
               Expanded(
                 child: Scrollbar(
                     scrollbarOrientation: ScrollbarOrientation.right,
-                    controller: scrollController,
+                    controller: _scrollController,
                     child: ListView.builder(
-                      controller: scrollController,
+                      controller: _scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
                       scrollDirection: Axis.vertical,
                       padding: const EdgeInsets.symmetric(horizontal: 50),
@@ -72,8 +107,7 @@ class ChatScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 50),
                   child: TextField(
                     controller: _textInputController,
-                    onSubmitted: (value) =>
-                        messageProvider.publishMessage(value),
+                    onSubmitted: (value) => _submitMessage(messageProvider),
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: 'Type your message...',

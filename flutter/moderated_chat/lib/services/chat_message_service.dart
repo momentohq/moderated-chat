@@ -9,37 +9,59 @@ import '../config.dart';
 import '../models/chat_message.dart';
 
 class ChatMessageService {
+  bool _isActive = true;
   final UserService _userService;
   late TopicClient _topicClient;
   late CacheClient _cacheClient;
   final StreamController<ChatMessage> _messageController =
       StreamController<ChatMessage>.broadcast();
+  String _currentLanguage = "en";
   TopicSubscription? _currentSubscription;
-  late int _expiresAt;
 
   ChatMessageService._(userService) : _userService = userService;
 
   static Future<ChatMessageService> create(UserService authService) async {
     final service = ChatMessageService._(authService);
-    await service._initializeClients();
+    await service._initializeAndScheduleClientRefresh();
     return service;
   }
 
-  Future<void> _initializeClients() async {
+  Future<void> _initializeAndScheduleClientRefresh() async {
+    if (!_isActive) {
+      return;
+    }
     final (apiToken, expiresAt) = await _userService.getApiToken();
-    _expiresAt = expiresAt;
     _topicClient = TopicClient(CredentialProvider.fromString(apiToken),
         TopicClientConfigurations.latest());
     _cacheClient = CacheClient(CredentialProvider.fromString(apiToken),
         CacheClientConfigurations.latest(), const Duration(days: 1));
+
+    final DateTime now = DateTime.now();
+    // schedule a refresh 20 seconds before the token expires
+    final DateTime refreshTime =
+        DateTime.fromMillisecondsSinceEpoch((expiresAt - 20) * 1000);
+    final Duration durationUntilRefresh = refreshTime.difference(now);
+    print("Time until refresh: $durationUntilRefresh");
+
+    Future.delayed(durationUntilRefresh).then((value) => {
+          print("refreshing clients"),
+          unsubscribe(),
+          subscribe(),
+          _initializeAndScheduleClientRefresh()
+        });
   }
 
   Stream<ChatMessage> get messages => _messageController.stream;
 
-  Future<bool> publishMessage(String message, String language) async {
+  Future<void> changeLanguage(String language) async {
+    unsubscribe();
+    _currentLanguage = language;
+  }
+
+  Future<bool> publishMessage(String message) async {
     final chatUser = _userService.getUser();
     final chatMessage = ChatMessage(DateTime.now().millisecondsSinceEpoch,
-        "text", message, language, chatUser.name, chatUser.id);
+        "text", message, _currentLanguage, chatUser.name, chatUser.id);
 
     final jsonMessage = jsonEncode(chatMessage.toJson());
     print("sending json message: $jsonMessage");
@@ -55,13 +77,13 @@ class ChatMessageService {
     }
   }
 
-  Future<void> subscribe(String language) async {
-    print("Subscribing to chat-$language");
+  Future<void> subscribe() async {
+    print("Subscribing to chat-$_currentLanguage");
 
     unsubscribe();
 
     final subscribeResult =
-        await _topicClient.subscribe("moderator", "chat-$language");
+        await _topicClient.subscribe("moderator", "chat-$_currentLanguage");
     switch (subscribeResult) {
       case TopicSubscription():
         print("Successful subscription");
@@ -73,9 +95,11 @@ class ChatMessageService {
                 final jsonMessage = jsonDecode(item.value);
                 final chatMessage = ChatMessage.fromJson(jsonMessage);
                 if (chatMessage.messageType == "text") {
-                  print("Received message from stream chat-$language: ${chatMessage.message}");
+                  print(
+                      "Received message from stream chat-$_currentLanguage: ${chatMessage.message}");
                 } else {
-                  print("Received non-text message from stream chat-$language");
+                  print(
+                      "Received non-text message from stream chat-$_currentLanguage");
                 }
                 _messageController.sink.add(chatMessage);
               } catch (e) {
@@ -101,11 +125,11 @@ class ChatMessageService {
     }
   }
 
-  Future<void> loadMessages(String language) async {
+  Future<void> loadMessages() async {
     final apiUrl =
-        "${Config.baseUrl}/v1/translate/latestMessages/$language";
-    final messages = await http.get(Uri.parse(apiUrl));
-    final jsonObject = jsonDecode(messages.body);
+        "${Config.baseUrl}/v1/translate/latestMessages/$_currentLanguage";
+    final response = await http.get(Uri.parse(apiUrl));
+    final jsonObject = jsonDecode(utf8.decode(response.bodyBytes));
     final messagesFromJson = jsonObject['messages'];
     for (var i = 0; i < messagesFromJson.length; i++) {
       final message = messagesFromJson[i];
@@ -120,6 +144,7 @@ class ChatMessageService {
   }
 
   void dispose() {
+    _isActive = false;
     _messageController.close();
     _topicClient.close();
     _cacheClient.close();

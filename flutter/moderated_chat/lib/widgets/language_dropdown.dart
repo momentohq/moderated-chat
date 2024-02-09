@@ -47,6 +47,7 @@ class _LanguageDropdownState extends State<LanguageDropdown> {
           });
         }
       },
+      dropdownColor: const Color.fromARGB(255, 14, 37, 21),
     );
   }
 }

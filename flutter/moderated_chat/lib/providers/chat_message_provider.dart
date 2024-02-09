@@ -5,7 +5,6 @@ import 'package:moderated_chat/services/chat_message_service.dart';
 class ChatMessageProvider with ChangeNotifier {
   late final ChatMessageService _chatMessageService;
   final List<ChatMessage> _messages = [];
-  String currentLanguage = "en";
 
   List<ChatMessage> get messages => _messages;
 
@@ -17,21 +16,20 @@ class ChatMessageProvider with ChangeNotifier {
     });
   }
 
-  Future<void> subscribe() async {
-    _chatMessageService.loadMessages(currentLanguage);
-    _chatMessageService.subscribe(currentLanguage);
+  Future<void> loadAndSubscribe() async {
+    _chatMessageService.loadMessages();
+    _chatMessageService.subscribe();
   }
 
   Future<void> publishMessage(String message) async {
-    await _chatMessageService.publishMessage(message, currentLanguage);
+    await _chatMessageService.publishMessage(message);
   }
 
   void changeLanguage(String language) {
-    _chatMessageService.unsubscribe();
-    currentLanguage = language;
+    _chatMessageService.changeLanguage(language);
     _messages.clear();
     notifyListeners();
-    subscribe();
+    loadAndSubscribe();
   }
 
   @override

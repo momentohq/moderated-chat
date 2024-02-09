@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _initChatServices(UserService userService) async {
     final chatMessageService = await ChatMessageService.create(userService);
     final chatMessageProvider = ChatMessageProvider(chatMessageService);
-    chatMessageProvider.subscribe();
+    chatMessageProvider.loadAndSubscribe();
 
     // Check if the widget is still mounted before navigating
     if (mounted) {
@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(
             builder: (context) => ChangeNotifierProvider<ChatMessageProvider>(
                   create: (_) => chatMessageProvider,
-                  child: ChatScreen(),
+                  child: const ChatScreen(),
                 )),
       );
     }
