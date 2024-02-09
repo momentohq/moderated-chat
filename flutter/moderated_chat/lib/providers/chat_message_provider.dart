@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:moderated_chat/models/chat_message.dart';
 import 'package:moderated_chat/services/chat_message_service.dart';
@@ -10,8 +12,11 @@ class ChatMessageProvider with ChangeNotifier {
 
   ChatMessageProvider(ChatMessageService chatMessageService) {
     _chatMessageService = chatMessageService;
-    _chatMessageService.messages.listen((message) {
-      _messages.add(message);
+    _chatMessageService.messages.listen((messageList) {
+      for (ChatMessage message in messageList) {
+        _messages.add(message);
+      }
+      print("notifying listeners of ${messageList.length} new messages");
       notifyListeners();
     });
   }
@@ -23,6 +28,10 @@ class ChatMessageProvider with ChangeNotifier {
 
   Future<void> publishMessage(String message) async {
     await _chatMessageService.publishMessage(message);
+  }
+
+  Future<void> publishImage(Uint8List image) async {
+    await _chatMessageService.publishImage(image);
   }
 
   void changeLanguage(String language) {

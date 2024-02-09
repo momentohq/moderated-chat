@@ -40,6 +40,8 @@ dependencies:
   uuid: ^4.3.3
   flutter_svg: ^2.0.9
   provider: ^6.1.1
+  chat_bubbles: ^1.6.0
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:

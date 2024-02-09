@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(
             builder: (context) => ChangeNotifierProvider<ChatMessageProvider>(
                   create: (_) => chatMessageProvider,
-                  child: const ChatScreen(),
+                  child: ChatScreen(userService: userService),
                 )),
       );
     }
@@ -61,23 +61,37 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              controller: _usernameController,
-              decoration: const InputDecoration(
-                labelText: 'Choose your username...',
-                border: OutlineInputBorder(),
-                fillColor: Color.fromARGB(255, 220, 229, 221),
-                filled: true,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: TextField(
+                controller: _usernameController,
+                onSubmitted: (value) => _submitUsername(),
+                style:
+                    const TextStyle(color: Colors.white, fontFamily: 'Inter'),
+                cursorColor: Colors.white,
+                decoration: InputDecoration(
+                  labelText: 'Choose your username',
+                  labelStyle:
+                      const TextStyle(color: Colors.white, fontFamily: 'Inter'),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  fillColor: const Color.fromARGB(255, 14, 37, 21),
+                  filled: true,
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.white),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 20),
+            // const SizedBox(height: 20),
             ElevatedButton(
                 onPressed: _submitUsername,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 0, 108, 75),
+                  backgroundColor: const Color.fromARGB(255, 196, 241, 53),
                 ),
                 child: const Text('Continue',
-                    style: TextStyle(color: Colors.white)))
+                    style: TextStyle(color: Color.fromARGB(255, 14, 37, 21))))
           ],
         ),
       ),
