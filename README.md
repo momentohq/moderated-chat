@@ -1,6 +1,6 @@
 # Moderated Chat
 
-This application uses Momento Webhooks to build a moderated, multi-language chat application. Users can chat with each other in multiple languages at the same time, with profanity filtered out. This repository is structured as a mono repo, with our frontend, backend, and infrastructure code separated by folders. The folder structure is as follows
+This application uses Momento Webhooks to build a moderated, multi-language chat application. Users can chat with each other in multiple languages at the same time, using a variety of client applications, with profanity filtered out. This repository is structured as a mono repo, with our main frontend, backend, and infrastructure code separated by folders. The folder structure is as follows
 
 ```
 ├── backend
@@ -34,6 +34,13 @@ This application uses Momento Webhooks to build a moderated, multi-language chat
     └── tsconfig.json
 ```
 
+Additional client applications of the moderated chat app can be found in the following locations:
+
+- [iOS](./ios/)
+- [Android](./android/)
+- [Flutter](./flutter/)
+- [Unity](https://github.com/momentohq/momento-unity-demo)
+
 ## Backend
 
 Contains apis for the moderated chat application. There are a few apis that we are using
@@ -57,7 +64,7 @@ In order to run these apis, there needs to be a secret stored in aws secrets man
 
 ## Frontend
 
-Contains the frontend code for our chat application. To run
+Contains the web browser frontend code for our chat application. To run
 
 1. `npm install`
 2. `npm run dev`
