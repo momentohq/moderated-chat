@@ -168,7 +168,7 @@ export async function getImageMessage({
   if (resp instanceof CacheGet.Error) {
     if (resp.errorCode() === MomentoErrorCode.AUTHENTICATION_ERROR) {
       console.log(
-        "token has expired, going to refresh subscription and retry publish",
+        "token has expired, going to refresh subscription and retry getting item from cache",
       );
       clearCurrentClient();
       return await getImageMessage({ imageId });
