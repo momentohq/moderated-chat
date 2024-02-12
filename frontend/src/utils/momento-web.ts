@@ -7,6 +7,7 @@ import {
   type TopicItem,
   TopicPublish,
   TopicSubscribe,
+  CacheGet,
 } from "@gomomento/sdk-web";
 import TranslationApi from "../api/translation";
 import imageCompression from "browser-image-compression";
@@ -164,6 +165,15 @@ export async function getImageMessage({
 }): Promise<string> {
   const client = await getWebCacheClient();
   const resp = await client.get(cacheName, imageId);
+  if (resp instanceof CacheGet.Error) {
+    if (resp.errorCode() === MomentoErrorCode.AUTHENTICATION_ERROR) {
+      console.log(
+        "token has expired, going to refresh subscription and retry getting item from cache",
+      );
+      clearCurrentClient();
+      return await getImageMessage({ imageId });
+    }
+  }
   return resp.value() ?? "";
 }
 
