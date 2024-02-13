@@ -160,8 +160,10 @@ export async function sendImageMessage({
 
 export async function getImageMessage({
   imageId,
+  sourceLanguage,
 }: {
   imageId: string;
+  sourceLanguage: string;
 }): Promise<string> {
   const client = await getWebCacheClient();
   const resp = await client.get(cacheName, imageId);
@@ -171,7 +173,8 @@ export async function getImageMessage({
         "token has expired, going to refresh subscription and retry getting item from cache",
       );
       clearCurrentClient();
-      return await getImageMessage({ imageId });
+      await subscribeToTopic(sourceLanguage, onItemCb, onErrorCb);
+      return await getImageMessage({ imageId, sourceLanguage });
     }
   }
   return resp.value() ?? "";
