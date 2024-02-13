@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import {Button, StyleSheet, Text, View} from 'react-native';
 import {
   CacheClient,
   CredentialProvider,
@@ -8,7 +8,7 @@ import {
   CacheSetFetch,
   CacheDictionaryFetch,
   TopicClient,
-  TopicConfigurations, TopicPublish
+  TopicConfigurations, TopicPublish, TopicSubscribe
 } from "@gomomento/sdk-web";
 
 const credProvider = CredentialProvider.fromString({
@@ -26,10 +26,13 @@ const pubsub = new TopicClient({
   configuration: TopicConfigurations.Default.latest()
 })
 
+const cache = "test";
+const topicname = "topic"
+let subscription = null
+
 const helper = async () => {
   const key = "key";
   const value = "value";
-  const cache = "test";
   console.log();
   console.log();
   console.log("----- starting new run -----");
@@ -76,19 +79,18 @@ const helper = async () => {
   } else {
     console.error("dictionary fetch was not a hit, should have been one");
   }
+}
 
-  const topicname = "topic"
-
-  console.log("publishing...")
-  const publishResp = await pubsub.publish(cache, topicname, 'hello!!!!');
-  if (publishResp instanceof TopicPublish.Success) {
-    console.log("successful publish");
+const doPublish = () => {
+  const publishResponse = pubsub.publish(cache, topicname, "Hullabaloo!");
+  if (publishResponse instanceof TopicPublish.Error) {
+    console.log(`got publish error: ${publishResponse}`);
   } else {
-    console.log("publish error:");
-    console.log(publishResp);
+    console.log("successful publish");
   }
+}
 
-  console.log("subscribing...")
+const doSubscribe = async () => {
   const subscribeResp = await pubsub.subscribe(cache, topicname, {
     onError(err, sub) {
       console.log(`error on topic pubsub. Topic: ${topicname}. Error: ${err}`)
@@ -97,8 +99,14 @@ const helper = async () => {
       console.log(`topic item received! Topic: ${topicname}. Item: ${item.value()}`);
     }
   });
-  console.log("done subscribing");
-  console.log(subscribeResp);
+  if (subscribeResp instanceof TopicSubscribe.Subscription) {
+    console.log(`got subscription: ${subscribeResp}`);
+    subscription = subscribeResp;
+  }
+}
+
+const doClose = () => {
+  subscription.unsubscribe();
 }
 
 export default function App() {
@@ -107,6 +115,18 @@ export default function App() {
     <View style={styles.container}>
       <Text>Open up App.js to start working on your app!</Text>
       <StatusBar style="auto" />
+      <Button
+          title = "Pub"
+          onPress={doPublish}
+      />
+      <Button
+          title = "Sub"
+          onPress={doSubscribe}
+      />
+      <Button
+          title = "UnSub"
+          onPress={doClose}
+      />
     </View>
   );
 }
