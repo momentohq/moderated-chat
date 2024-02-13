@@ -91,6 +91,10 @@ const doPublish = () => {
 }
 
 const doSubscribe = async () => {
+  console.log("subscribing");
+  if (subscription) {
+    subscription.unsubscribe();
+  }
   const subscribeResp = await pubsub.subscribe(cache, topicname, {
     onError(err, sub) {
       console.log(`error on topic pubsub. Topic: ${topicname}. Error: ${err}`)
@@ -106,7 +110,9 @@ const doSubscribe = async () => {
 }
 
 const doClose = () => {
-  subscription.unsubscribe();
+  if (subscription) {
+    subscription.unsubscribe();
+  }
 }
 
 export default function App() {
