@@ -11,7 +11,7 @@
   "dependencies": {
     "@gomomento/sdk-web": "^1.65.1",
     "base-64": "^1.0.0",
-    "expo": "~50.0.6",
+    "expo": "^50.0.6",
     "expo-status-bar": "~1.11.1",
     "react": "18.2.0",
     "react-native": "0.73.4",
