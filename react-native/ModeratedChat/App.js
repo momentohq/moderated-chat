@@ -92,9 +92,11 @@ const doPublish = () => {
 
 const doSubscribe = async () => {
   console.log("subscribing");
+
   if (subscription) {
     subscription.unsubscribe();
   }
+
   const subscribeResp = await pubsub.subscribe(cache, topicname, {
     onError(err, sub) {
       console.log(`error on topic pubsub. Topic: ${topicname}. Error: ${err}`)
@@ -103,15 +105,22 @@ const doSubscribe = async () => {
       console.log(`topic item received! Topic: ${topicname}. Item: ${item.value()}`);
     }
   });
+
   if (subscribeResp instanceof TopicSubscribe.Subscription) {
     console.log(`got subscription: ${subscribeResp}`);
     subscription = subscribeResp;
+  } else {
+    console.log(`error getting subscription: ${subscribeResp}`);
   }
 }
 
 const doClose = () => {
+  console.log("checking active subscription");
   if (subscription) {
+    console.log("unsubscribing");
     subscription.unsubscribe();
+  } else {
+    console.log("no subscription... skipping");
   }
 }
 
