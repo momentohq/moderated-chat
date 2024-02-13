@@ -158,6 +158,7 @@ const ChatApp = () => {
       if (message.messageType === MessageType.IMAGE) {
         message.message = await getImageMessage({
           imageId: message.message,
+          sourceLanguage: selectedLanguage,
         });
       }
       setChats((curr) => [...curr, message]);
