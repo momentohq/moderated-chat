@@ -12,7 +12,7 @@ import {
 } from "@gomomento/sdk-web";
 
 const credProvider = CredentialProvider.fromString({
-  apiKey: "YOUR_API_KEY"
+  apiKey: process.env.EXPO_PUBLIC_MOMENTO_API_KEY
 });
 
 const client = new CacheClient({
