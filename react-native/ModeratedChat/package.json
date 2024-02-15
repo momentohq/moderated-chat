@@ -19,6 +19,7 @@
     "expo-storage": "^48.1.0",
     "react": "18.2.0",
     "react-native": "0.72.10",
+    "react-native-dropdown-select-list": "^2.0.5",
     "text-encoding": "^0.7.0",
     "typescript": "^5.1.3"
   },

@@ -3,6 +3,7 @@ import {View, Text, StyleSheet, ScrollView, FlatList} from 'react-native';
 import translation from './api/translation';
 import {useEffect, useState} from 'react';
 import {ChatMessageEvent} from './shared/models';
+import {SelectList} from 'react-native-dropdown-select-list/index';
 // import Storage from 'expo-storage';
 
 export interface LanguageOption {
@@ -33,14 +34,6 @@ const styles = StyleSheet.create({
   },
 });
 
-type ItemProps = {title: string};
-
-const Item = ({title}: ItemProps) => (
-  <View style={styles.item}>
-    <Text>{title}</Text>
-  </View>
-);
-
 const ChatApp = () => {
   const user = getUser();
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
@@ -57,7 +50,7 @@ const ChatApp = () => {
     translation
       .getLatestChats(selectedLanguage)
       .then((_chats) => {
-        console.log(_chats.messages);
+        console.log(`got ${_chats.messages.length} messages`);
         setChats(_chats.messages);
       })
       .catch((e) => console.error("error fetching latest chats", e));
@@ -68,8 +61,13 @@ const ChatApp = () => {
       .getSupportedLanguages()
       .then((response) => {
         const supportedLanguages = response.supportedLanguages;
-        setAvailableLanguages(supportedLanguages);
-        console.log("languages are set");
+        const dropdownLanguages = [];
+        for (const {label, value} of supportedLanguages) {
+          dropdownLanguages.push({key: value, value: label})
+        }
+        console.log(supportedLanguages);
+        console.log(dropdownLanguages);
+        setAvailableLanguages(dropdownLanguages);
       })
       .catch((e) => console.error("error fetching supported languages", e));
   };
@@ -79,6 +77,13 @@ const ChatApp = () => {
     fetchSupportedLanguages();
   }, []);
 
+  const handleLanguageSelect = (selectedValue: string) => {
+    // TODO: store locally
+    // localStorage.setItem("selectedLanguage", selectedValue);
+    console.log("setting language to " + selectedValue);
+    setSelectedLanguage(selectedValue);
+  };
+
   return (
     <ScrollView>
       <View style={styles.container}>
@@ -86,9 +91,10 @@ const ChatApp = () => {
           <Text>Welcome to MoChat!</Text>
         </View>
         <View>
-          <FlatList
+          <SelectList
+            setSelected={(val) => handleLanguageSelect(val)}
             data={availableLanguages}
-            renderItem={({item}) => <Item title={item.label} key={item.value} />}
+            save="key"
           />
         </View>
       </View>
