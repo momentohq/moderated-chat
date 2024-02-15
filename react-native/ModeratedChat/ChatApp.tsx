@@ -6,7 +6,7 @@ import {ChatMessageEvent, MessageType} from './shared/models';
 import {SelectList} from 'react-native-dropdown-select-list/index';
 import {TopicItem, TopicSubscribe} from '@gomomento/sdk-web';
 import {sendTextMessage, subscribeToTopic} from './utils/momento-web';
-// import Storage from 'expo-storage';
+import Storage from 'expo-storage';
 
 export interface LanguageOption {
   value: string;
@@ -47,15 +47,17 @@ const ChatApp = () => {
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
   const [textInput, setTextInput] = useState("");
   // TODO: store locally
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(
-    // Storage.getString('selectedLanguage') || "en"
-    "en"
-  );
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [availableLanguages, setAvailableLanguages] = useState<
     LanguageOption[]
   >([]);
 
   const fetchLatestChats = () => {
+    console.log(`fetching messages for language: ${selectedLanguage}`);
+    if (!selectedLanguage) {
+      console.log("selected language not set . . . waiting");
+      return;
+    }
     translation
       .getLatestChats(selectedLanguage)
       .then((_chats) => {
@@ -82,15 +84,38 @@ const ChatApp = () => {
   };
 
   useEffect(() => {
+    const firstLoad = async () => {
+      try {
+        const savedLanguage = await Storage.getItem({key: 'selectedLanguage'});
+        console.log(`saved language from storage: ${savedLanguage}`);
+        setSelectedLanguage(savedLanguage || "en");
+        console.log(`using saved language: ${savedLanguage || "en"}`);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    firstLoad();
     fetchLatestChats();
     fetchSupportedLanguages();
+
   }, []);
+
+  const saveSelectedLanguage = async (lang: string) => {
+    try {
+      console.log(`in saveSelectedLanguage with ${lang}`);
+      await Storage.setItem({key: 'selectedLanguage', value: lang});
+      console.log(`retrieving stored item: ${await Storage.getItem({key: 'selectedLanguage'})}`);
+    } catch (err) {
+      console.log(err);
+    }
+  }
 
   const handleLanguageSelect = (selectedValue: string) => {
     // TODO: store locally
     // localStorage.setItem("selectedLanguage", selectedValue);
     console.log("setting language to " + selectedValue);
     setSelectedLanguage(selectedValue);
+    saveSelectedLanguage(selectedValue);
   };
 
   const onItem = async (item: TopicItem) => {
@@ -175,6 +200,8 @@ const ChatApp = () => {
             setSelected={(val) => handleLanguageSelect(val)}
             data={availableLanguages}
             save="key"
+            search={false}
+            defaultOption={{key:'en', value: '🇺🇸 English'}}
           />
         </View>
         <View>
