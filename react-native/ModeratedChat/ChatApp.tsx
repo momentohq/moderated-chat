@@ -1,11 +1,11 @@
 import {getUser} from './utils/user';
-import {View, Text, StyleSheet, ScrollView, FlatList} from 'react-native';
+import {View, Text, StyleSheet, ScrollView, FlatList, SafeAreaView, TextInput, Button} from 'react-native';
 import translation from './api/translation';
 import {useEffect, useState} from 'react';
 import {ChatMessageEvent, MessageType} from './shared/models';
 import {SelectList} from 'react-native-dropdown-select-list/index';
 import {TopicItem, TopicSubscribe} from '@gomomento/sdk-web';
-import {subscribeToTopic} from './utils/momento-web';
+import {sendTextMessage, subscribeToTopic} from './utils/momento-web';
 // import Storage from 'expo-storage';
 
 export interface LanguageOption {
@@ -34,11 +34,18 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     marginHorizontal: 16,
   },
+  input: {
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
+  },
 });
 
 const ChatApp = () => {
   const user = getUser();
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
+  const [textInput, setTextInput] = useState("");
   // TODO: store locally
   const [selectedLanguage, setSelectedLanguage] = useState<string>(
     // Storage.getString('selectedLanguage') || "en"
@@ -114,6 +121,49 @@ const ChatApp = () => {
     await subscribeToTopic(selectedLanguage, onItem, onError);
   };
 
+  const onSendMessage = async () => {
+    if (textInput) {
+      console.log(`sending message ${textInput}`);
+      await sendTextMessage({
+        messageType: MessageType.TEXT,
+        message: textInput,
+        sourceLanguage: selectedLanguage,
+      });
+      setTextInput("");
+    } else {
+      // TODO: image support
+      console.log("someday i'll send an image");
+    }
+    // } else if (imageInput) {
+    //   const imageAsBase64 = await readFileAsBase64(imageInput);
+    //   await sendImageMessage({
+    //     base64Image: imageAsBase64,
+    //     sourceLanguage: selectedLanguage,
+    //   });
+    //   setImageInput(null);
+    //   closeImagePreview();
+    // }
+  };
+
+  useEffect(() => {
+    subscribeToTopic(selectedLanguage, onItem, onError)
+      .then(() => {
+        console.log("successfully subscribed");
+      })
+      .catch((e) => console.error("error subscribing to topic", e));
+    void fetchLatestChats();
+  }, [selectedLanguage]);
+
+  // const scrollToBottom = () => {
+  //   const chatContainer = document.querySelector(".scrollbar-width-thin");
+  //   const scrollHeight = chatContainer?.scrollHeight;
+  //   chatContainer?.scrollTo(0, scrollHeight ?? 0);
+  // };
+  //
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [chats]);
+
   return (
     <ScrollView>
       <View style={styles.container}>
@@ -129,8 +179,29 @@ const ChatApp = () => {
         </View>
         <View>
           {chats.map((chat, index) => (
-            <Text key={index}>{chat.user.username}</Text>
+            <Text key={index}>{chat.user.username} - {new Date(chat.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+
+              {chat.messageType == 'text' ? (
+                "\n" + chat.message + "\n"
+              ) : (
+                '\nimage data\n'
+              )}</Text>
           ))}
+        </View>
+        <View>
+          <TextInput
+            style={styles.input}
+            placeholder={'Type your message...'}
+            value={textInput}
+            onChangeText={setTextInput}
+          ></TextInput>
+          <Button
+            title={"post"}
+            onPress={onSendMessage}
+          />
         </View>
       </View>
     </ScrollView>
