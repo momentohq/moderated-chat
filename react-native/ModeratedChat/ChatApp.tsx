@@ -129,7 +129,7 @@ const ChatApp = () => {
         </View>
         <View>
           {chats.map((chat, index) => (
-            <Text>{chat.user.username}</Text>
+            <Text key={index}>{chat.user.username}</Text>
           ))}
         </View>
       </View>
