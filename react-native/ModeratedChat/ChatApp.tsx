@@ -2,8 +2,10 @@ import {getUser} from './utils/user';
 import {View, Text, StyleSheet, ScrollView, FlatList} from 'react-native';
 import translation from './api/translation';
 import {useEffect, useState} from 'react';
-import {ChatMessageEvent} from './shared/models';
+import {ChatMessageEvent, MessageType} from './shared/models';
 import {SelectList} from 'react-native-dropdown-select-list/index';
+import {TopicItem, TopicSubscribe} from '@gomomento/sdk-web';
+import {subscribeToTopic} from './utils/momento-web';
 // import Storage from 'expo-storage';
 
 export interface LanguageOption {
@@ -84,6 +86,34 @@ const ChatApp = () => {
     setSelectedLanguage(selectedValue);
   };
 
+  const onItem = async (item: TopicItem) => {
+    try {
+      console.log(`listening to: ${selectedLanguage}`);
+      const message = JSON.parse(item.valueString()) as ChatMessageEvent;
+      // TODO: Image support
+      // if (message.messageType === MessageType.IMAGE) {
+      //   message.message = await getImageMessage({
+      //     imageId: message.message,
+      //     sourceLanguage: selectedLanguage,
+      //   });
+      // }
+      setChats((curr) => [...curr, message]);
+    } catch (e) {
+      console.error("unable to parse chat message", e);
+    }
+  };
+
+  const onError = async (
+    error: TopicSubscribe.Error,
+    _sub: TopicSubscribe.Subscription,
+  ) => {
+    console.error(
+      "received error from momento, getting new token and resubscribing",
+      error,
+    );
+    await subscribeToTopic(selectedLanguage, onItem, onError);
+  };
+
   return (
     <ScrollView>
       <View style={styles.container}>
@@ -96,6 +126,11 @@ const ChatApp = () => {
             data={availableLanguages}
             save="key"
           />
+        </View>
+        <View>
+          {chats.map((chat, index) => (
+            <Text>{chat.user.username}</Text>
+          ))}
         </View>
       </View>
     </ScrollView>
