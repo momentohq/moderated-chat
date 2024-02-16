@@ -1,5 +1,16 @@
 import {getUser} from './utils/user';
-import {View, Text, StyleSheet, ScrollView, FlatList, SafeAreaView, TextInput, Button} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  FlatList,
+  SafeAreaView,
+  TextInput,
+  Button,
+  Image,
+  Pressable
+} from 'react-native';
 import translation from './api/translation';
 import {useEffect, useState} from 'react';
 import {ChatMessageEvent, MessageType} from './shared/models';
@@ -225,10 +236,17 @@ const ChatApp = () => {
             value={textInput}
             onChangeText={setTextInput}
           ></TextInput>
-          <Button
-            title={"post"}
-            onPress={onSendMessage}
-          />
+          <Pressable onPress={() => alert("woohoo!")}>
+            <Image
+              source={require('./assets/attachment-icon.png')}/>
+          </Pressable>
+          <Pressable onPress={onSendMessage}>
+            <Image
+              source={require('./assets/send-icon.png')}
+              height={10}
+              width={10}
+            />
+          </Pressable>
         </View>
       </View>
     </ScrollView>
