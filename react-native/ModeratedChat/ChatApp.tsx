@@ -4,10 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  FlatList,
-  SafeAreaView,
   TextInput,
-  Button,
   Image,
   Pressable
 } from 'react-native';
@@ -18,6 +15,7 @@ import {SelectList} from 'react-native-dropdown-select-list/index';
 import {TopicItem, TopicSubscribe} from '@gomomento/sdk-web';
 import {sendTextMessage, subscribeToTopic} from './utils/momento-web';
 import Storage from 'expo-storage';
+import MoChatSend from './assets/mochat-send-button';
 
 export interface LanguageOption {
   value: string;
@@ -247,6 +245,7 @@ const ChatApp = () => {
               width={10}
             />
           </Pressable>
+          <MoChatSend width={32} height={32} />
         </View>
       </View>
     </ScrollView>
