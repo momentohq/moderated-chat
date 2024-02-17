@@ -12,7 +12,6 @@ import {
 import TranslationApi from "../api/translation";
 // import imageCompression from "browser-image-compression";
 import { MessageType, type PostMessageEvent } from '../shared/models';
-import 'react-native-get-random-values';
 import { v4 } from "uuid";
 import { getUser } from "./user";
 

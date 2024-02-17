@@ -1,5 +1,4 @@
 import { type User } from "../shared/models";
-import 'react-native-get-random-values';
 import { v4 } from "uuid";
 
 const usernameLocalStorageKey = "username-v2";
@@ -16,7 +15,7 @@ export const getUser = (): User => {
 
 export const createUser = (username: string) => {
   user = {
-    username,
+    username: username,
     id: v4(),
   };
   // localStorage.setItem(usernameLocalStorageKey, JSON.stringify(user));

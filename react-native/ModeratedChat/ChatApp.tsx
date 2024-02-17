@@ -16,7 +16,6 @@ import {TopicItem, TopicSubscribe} from '@gomomento/sdk-web';
 import {sendTextMessage, subscribeToTopic} from './utils/momento-web';
 import Storage from 'expo-storage';
 import MoChatSend from './assets/mochat-send-button';
-import momentoReactNativePolyfill from '@gomomento/sdk-react-native';
 
 export interface LanguageOption {
   value: string;
@@ -51,8 +50,6 @@ const styles = StyleSheet.create({
     padding: 10,
   },
 });
-
-momentoReactNativePolyfill();
 
 type ChatProps = {
   username: string

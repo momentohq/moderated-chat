@@ -1,7 +1,10 @@
-// import MomentoTestApp from './MomentoTestApp';
+import 'react-native-get-random-values';
+import momentoReactNativePolyfill from '@gomomento/sdk-react-native';
 import ChatApp from './ChatApp';
 import {useState} from 'react';
 import {Button, StyleSheet, TextInput, View} from 'react-native';
+
+momentoReactNativePolyfill();
 
 export default function App() {
   const [inputValue, setInputValue] = useState("");
