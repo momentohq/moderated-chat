@@ -245,13 +245,8 @@ const ChatApp = (props: ChatProps) => {
               source={require('./assets/attachment-icon.png')}/>
           </Pressable>
           <Pressable onPress={onSendMessage}>
-            <Image
-              source={require('./assets/send-icon.png')}
-              height={10}
-              width={10}
-            />
+            <MoChatSend width={32} height={32} />
           </Pressable>
-          <MoChatSend width={32} height={32} />
         </View>
       </View>
     </ScrollView>
