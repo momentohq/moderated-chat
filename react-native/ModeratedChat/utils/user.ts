@@ -1,10 +1,12 @@
 import { type User } from "../shared/models";
+import 'react-native-get-random-values';
 import { v4 } from "uuid";
 
 const usernameLocalStorageKey = "username-v2";
+let user: User = null;
 
 export const getUser = (): User => {
-  return {username: "pete", id: v4()};
+  return user;
   // const storedUser = localStorage.getItem(usernameLocalStorageKey);
   // if (!storedUser) {
   //   throw new Error("User not found");
@@ -13,7 +15,7 @@ export const getUser = (): User => {
 };
 
 export const createUser = (username: string) => {
-  const user: User = {
+  user = {
     username,
     id: v4(),
   };

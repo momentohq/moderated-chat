@@ -1,6 +1,44 @@
 // import MomentoTestApp from './MomentoTestApp';
 import ChatApp from './ChatApp';
+import {useState} from 'react';
+import {Button, StyleSheet, TextInput, View} from 'react-native';
 
 export default function App() {
-  return (<ChatApp/>);
+  const [inputValue, setInputValue] = useState("");
+  const [existingUser, setExistingUser] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const login = () => {
+    setExistingUser(inputValue);
+  }
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#25392B',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    input: {
+      height: 40,
+      margin: 12,
+      borderWidth: 1,
+      padding: 10,
+    },
+  });
+
+  return existingUser == "" ? (
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder={"Enter your username"}
+        multiline={false}
+        value={inputValue}
+        onChangeText={setInputValue}/>
+      <Button
+        title={"Submit"}
+        onPress={login}/>
+    </View>
+  ) : (
+    <ChatApp username={existingUser} />
+  );
 }

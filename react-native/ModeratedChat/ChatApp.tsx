@@ -1,4 +1,4 @@
-import {getUser} from './utils/user';
+import {createUser, getUser} from './utils/user';
 import {
   View,
   Text,
@@ -10,12 +10,13 @@ import {
 } from 'react-native';
 import translation from './api/translation';
 import {useEffect, useState} from 'react';
-import {ChatMessageEvent, MessageType} from './shared/models';
+import {ChatMessageEvent, MessageType, User} from './shared/models';
 import {SelectList} from 'react-native-dropdown-select-list/index';
 import {TopicItem, TopicSubscribe} from '@gomomento/sdk-web';
 import {sendTextMessage, subscribeToTopic} from './utils/momento-web';
 import Storage from 'expo-storage';
 import MoChatSend from './assets/mochat-send-button';
+import momentoReactNativePolyfill from '@gomomento/sdk-react-native';
 
 export interface LanguageOption {
   value: string;
@@ -51,8 +52,15 @@ const styles = StyleSheet.create({
   },
 });
 
-const ChatApp = () => {
-  const user = getUser();
+momentoReactNativePolyfill();
+
+type ChatProps = {
+  username: string
+}
+
+const ChatApp = (props: ChatProps) => {
+  createUser(props.username);
+  const user: User = getUser();
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
   const [textInput, setTextInput] = useState("");
   // TODO: store locally
@@ -211,6 +219,7 @@ const ChatApp = () => {
             save="key"
             search={false}
             defaultOption={{key:'en', value: '🇺🇸 English'}}
+            maxHeight={300}
           />
         </View>
         <View>
