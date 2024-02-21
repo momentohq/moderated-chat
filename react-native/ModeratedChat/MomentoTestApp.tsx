@@ -12,7 +12,7 @@ import {
 } from "@gomomento/sdk-web";
 
 const credProvider = CredentialProvider.fromString({
-  apiKey: process.env.EXPO_PUBLIC_MOMENTO_API_KEY
+  apiKey: ""
 });
 
 const client = new CacheClient({
@@ -27,7 +27,7 @@ const pubsub = new TopicClient({
 })
 
 const cache = "test";
-const topicname = "topic"
+const topicname = "topic";
 let subscription = null
 
 const helper = async () => {
@@ -81,8 +81,8 @@ const helper = async () => {
   }
 }
 
-const doPublish = () => {
-  const publishResponse = pubsub.publish(cache, topicname, "Hullabaloo!");
+const doPublish = async () => {
+  const publishResponse = await pubsub.publish(cache, topicname, "Hullabaloo!");
   if (publishResponse instanceof TopicPublish.Error) {
     console.log(`got publish error: ${publishResponse}`);
   } else {
@@ -94,6 +94,7 @@ const doSubscribe = async () => {
   console.log("subscribing");
 
   if (subscription) {
+    console.log("unsubscribing");
     subscription.unsubscribe();
   }
 
@@ -126,17 +127,18 @@ const doClose = () => {
 
 export default function MomentoTest() {
   helper().then(() => console.log("helper ran successfully")).catch((e) => console.error("helper failed", e));
+  doSubscribe().then(() => console.log("subbed")).catch((e) => console.error("subscribe failed", e)).finally(() => console.log("subbed finally"));
   return (
     <View style={styles.container}>
       <Text>Open up App.js to start working on your app!</Text>
       <StatusBar style="auto" />
       <Button
         title = "Pub"
-        onPress={doPublish}
+        onPress={() => doPublish().then(() => console.log("pubbed")).catch((e) => console.error("publish failed", e))}
       />
       <Button
         title = "Sub"
-        onPress={doSubscribe}
+        onPress={() => doSubscribe().then(() => console.log("subbed")).catch((e) => console.error("subscribe failed", e))}
       />
       <Button
         title = "UnSub"
