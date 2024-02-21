@@ -1,22 +1,5 @@
-// console.log('ok');
-// import {decode, encode} from 'base-64';
-//
-// if (!global.btoa) {
-//   global.btoa = encode;
-// }
-// if (!global.atob) {
-//   global.atob = decode;
-// }
-//
-// const TextEncodingPolyfill = require('text-encoding');
-// Object.assign(global, {
-//   TextEncoder: TextEncodingPolyfill.TextEncoder,
-//   TextDecoder: TextEncodingPolyfill.TextDecoder,
-// });
-// console.log('ok');
-
 import 'react-native-get-random-values';
-import '@gomomento/sdk-react-native';
+import './polyfill';
 import ChatApp from './ChatApp';
 import {useState} from 'react';
 import {Button, StyleSheet, TextInput, View} from 'react-native';
