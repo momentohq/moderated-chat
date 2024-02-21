@@ -1,10 +1,26 @@
+// console.log('ok');
+// import {decode, encode} from 'base-64';
+//
+// if (!global.btoa) {
+//   global.btoa = encode;
+// }
+// if (!global.atob) {
+//   global.atob = decode;
+// }
+//
+// const TextEncodingPolyfill = require('text-encoding');
+// Object.assign(global, {
+//   TextEncoder: TextEncodingPolyfill.TextEncoder,
+//   TextDecoder: TextEncodingPolyfill.TextDecoder,
+// });
+// console.log('ok');
+
 import 'react-native-get-random-values';
-import momentoReactNativePolyfill from '@gomomento/sdk-react-native';
+import '@gomomento/sdk-react-native';
 import ChatApp from './ChatApp';
 import {useState} from 'react';
 import {Button, StyleSheet, TextInput, View} from 'react-native';
-
-momentoReactNativePolyfill();
+import MomentoTest from './MomentoTestApp';
 
 export default function App() {
   const [inputValue, setInputValue] = useState("");
@@ -29,19 +45,20 @@ export default function App() {
     },
   });
 
-  return existingUser == "" ? (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder={"Enter your username"}
-        multiline={false}
-        value={inputValue}
-        onChangeText={setInputValue}/>
-      <Button
-        title={"Submit"}
-        onPress={login}/>
-    </View>
-  ) : (
-    <ChatApp username={existingUser} />
-  );
+  return (<MomentoTest/>);
+  // return existingUser == "" ? (
+  //   <View style={styles.container}>
+  //     <TextInput
+  //       style={styles.input}
+  //       placeholder={"Enter your username"}
+  //       multiline={false}
+  //       value={inputValue}
+  //       onChangeText={setInputValue}/>
+  //     <Button
+  //       title={"Submit"}
+  //       onPress={login}/>
+  //   </View>
+  // ) : (
+  //   <ChatApp username={existingUser} />
+  // );
 }
