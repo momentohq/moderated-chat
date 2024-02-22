@@ -193,8 +193,14 @@ const ChatApp = (props: ChatProps) => {
     bannerItem: {
       width: '50%'
     },
+    myItem: {
+      backgroundColor: '#ffffff',
+      padding: 20,
+      marginVertical: 8,
+      marginHorizontal: 16,
+    },
     item: {
-      backgroundColor: '#f9c2ff',
+      backgroundColor: '#cccccc',
       padding: 20,
       marginVertical: 8,
       marginHorizontal: 16,
@@ -225,7 +231,10 @@ const ChatApp = (props: ChatProps) => {
           data={chats}
           renderItem={
             ({item}) =>
-              <Text>
+              <Text style={(item.user.id == user.id) ? styles.myItem : styles.item}>
+                {item.user.id} - {user.id}
+
+
                 {item.user.username} - {new Date(item.timestamp).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
