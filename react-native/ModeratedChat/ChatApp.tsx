@@ -3,10 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   Image,
-  Pressable
+  Pressable,
+  FlatList
 } from 'react-native';
 import translation from './api/translation';
 import {useEffect, useState} from 'react';
@@ -21,35 +21,6 @@ export interface LanguageOption {
   value: string;
   label: string;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#25392B',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  banner: {
-    flex: 1,
-    backgroundColor: '#cccccc',
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-    height: '20%',
-    padding: '5%'
-  },
-  item: {
-    backgroundColor: '#f9c2ff',
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: 16,
-  },
-  input: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-  },
-});
 
 type ChatProps = {
   username: string
@@ -203,53 +174,87 @@ const ChatApp = (props: ChatProps) => {
   //   scrollToBottom();
   // }, [chats]);
 
-  return (
-    <ScrollView>
-      <View style={styles.container}>
-        <View style={styles.banner}>
-          <Text>Welcome to MoChat!</Text>
-        </View>
-        <View>
-          <SelectList
-            setSelected={(val) => handleLanguageSelect(val)}
-            data={availableLanguages}
-            save="key"
-            search={false}
-            defaultOption={{key:'en', value: '🇺🇸 English'}}
-            maxHeight={300}
-          />
-        </View>
-        <View>
-          {chats.map((chat, index) => (
-            <Text key={index}>{chat.user.username} - {new Date(chat.timestamp).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: '#25392B',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    banner: {
+      // flex: 1,
+      backgroundColor: '#cccccc',
+      // alignItems: 'center',
+      justifyContent: 'space-evenly',
+      height: '20%',
+      width: '100%',
+      padding: '5%'
+    },
+    bannerItem: {
+      width: '50%'
+    },
+    item: {
+      backgroundColor: '#f9c2ff',
+      padding: 20,
+      marginVertical: 8,
+      marginHorizontal: 16,
+    },
+    input: {
+      height: 40,
+      margin: 12,
+      borderWidth: 1,
+      padding: 10,
+    },
+  });
 
-              {chat.messageType == 'text' ? (
-                "\n" + chat.message + "\n"
-              ) : (
-                '\nimage data\n'
-              )}</Text>
-          ))}
-        </View>
-        <View>
-          <TextInput
-            style={styles.input}
-            placeholder={'Type your message...'}
-            value={textInput}
-            onChangeText={setTextInput}
-          ></TextInput>
-          <Pressable onPress={() => alert("woohoo!")}>
-            <Image
-              source={require('./assets/attachment-icon.png')}/>
-          </Pressable>
-          <Pressable onPress={onSendMessage}>
-            <MoChatSend width={32} height={32} />
-          </Pressable>
-        </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.banner}>
+        <Text style={styles.bannerItem}>Welcome to MoChat!</Text>
+        <View style={styles.bannerItem}><SelectList
+          setSelected={(val) => handleLanguageSelect(val)}
+          data={availableLanguages}
+          save="key"
+          search={false}
+          defaultOption={{key:'en', value: '🇺🇸 English'}}
+          maxHeight={300}
+        /></View>
       </View>
-    </ScrollView>
+      <View style={styles.container}>
+        <FlatList
+          data={chats}
+          renderItem={
+            ({item}) =>
+              <Text>
+                {item.user.username} - {new Date(item.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+
+                {item.messageType == 'text' ? (
+                  "\n" + item.message + "\n"
+                ) : (
+                  '\nimage data\n'
+                )}
+            </Text>
+          }/>
+      </View>
+      <View>
+        <TextInput
+          style={styles.input}
+          placeholder={'Type your message...'}
+          value={textInput}
+          onChangeText={setTextInput}
+        ></TextInput>
+        <Pressable onPress={() => alert("woohoo!")}>
+          <Image
+            source={require('./assets/attachment-icon.png')}/>
+        </Pressable>
+        <Pressable onPress={onSendMessage}>
+          <MoChatSend width={32} height={32} />
+        </Pressable>
+      </View>
+    </View>
   )
 }
 
