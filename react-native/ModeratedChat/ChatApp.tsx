@@ -16,6 +16,7 @@ import {TopicItem, TopicSubscribe} from '@gomomento/sdk-web';
 import {sendTextMessage, subscribeToTopic} from './utils/momento-web';
 import Storage from 'expo-storage';
 import MoChatSend from './assets/mochat-send-button';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 export interface LanguageOption {
   value: string;
@@ -174,7 +175,15 @@ const ChatApp = (props: ChatProps) => {
   //   scrollToBottom();
   // }, [chats]);
 
+  const insets = useSafeAreaInsets();
   const styles = StyleSheet.create({
+    appContainer: {
+      flex: 1,
+      paddingTop: insets.top,
+      paddingBottom: insets.bottom,
+      paddingLeft: insets.left,
+      paddingRight: insets.right
+    },
     container: {
       flex: 1,
       backgroundColor: '#25392B',
@@ -214,7 +223,7 @@ const ChatApp = (props: ChatProps) => {
   });
 
   return (
-    <View style={styles.container}>
+    <View style={styles.appContainer}>
       <View style={styles.banner}>
         <Text style={styles.bannerItem}>Welcome to MoChat!</Text>
         <View style={styles.bannerItem}><SelectList

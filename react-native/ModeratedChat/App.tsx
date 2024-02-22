@@ -3,6 +3,7 @@ import './polyfill';
 import ChatApp from './ChatApp';
 import {useState} from 'react';
 import {Button, StyleSheet, TextInput, View} from 'react-native';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 export default function App() {
   const [inputValue, setInputValue] = useState("");
@@ -40,6 +41,9 @@ export default function App() {
         onPress={login}/>
     </View>
   ) : (
-    <ChatApp username={existingUser} />
+    <SafeAreaProvider>
+      <ChatApp username={existingUser} />
+    </SafeAreaProvider>
   );
+
 }
