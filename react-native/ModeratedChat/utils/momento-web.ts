@@ -33,7 +33,7 @@ const cacheName = "moderator";
 const topicName = "chat-publish";
 
 async function getNewWebClients(): Promise<MomentoClients> {
-  const user = getUser();
+  const user = await getUser();
   webTopicClient = undefined;
 
   const tokenResp = await TranslationApi.createToken(user);

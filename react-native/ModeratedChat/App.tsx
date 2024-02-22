@@ -4,13 +4,20 @@ import ChatApp from './ChatApp';
 import {useState} from 'react';
 import {Button, StyleSheet, TextInput, View} from 'react-native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {User} from './shared/models';
+import {v4} from 'uuid';
 
 export default function App() {
   const [inputValue, setInputValue] = useState("");
-  const [existingUser, setExistingUser] = useState("");
+  const [existingUser, setExistingUser] = useState<User>(null);
   const [error, setError] = useState<string | null>(null);
   const login = () => {
-    setExistingUser(inputValue);
+    setExistingUser(
+      {
+        username: inputValue,
+        id: v4()
+      }
+    );
   }
 
   const styles = StyleSheet.create({
@@ -29,7 +36,7 @@ export default function App() {
     },
   });
 
-  return existingUser == "" ? (
+  return !existingUser ? (
     <View style={styles.container}>
       <TextInput
         style={styles.input}
@@ -44,7 +51,7 @@ export default function App() {
     </View>
   ) : (
     <SafeAreaProvider>
-      <ChatApp username={existingUser} />
+      <ChatApp user={existingUser} />
     </SafeAreaProvider>
   );
 

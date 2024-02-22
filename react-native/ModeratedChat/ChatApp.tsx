@@ -1,4 +1,3 @@
-import {createUser, getUser} from './utils/user';
 import {
   View,
   Text,
@@ -24,15 +23,13 @@ export interface LanguageOption {
 }
 
 type ChatProps = {
-  username: string
+  user: User;
 }
 
 const ChatApp = (props: ChatProps) => {
-  createUser(props.username);
-  const user: User = getUser();
+  const user = props.user;
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
   const [textInput, setTextInput] = useState("");
-  // TODO: store locally
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [availableLanguages, setAvailableLanguages] = useState<
     LanguageOption[]
@@ -72,6 +69,8 @@ const ChatApp = (props: ChatProps) => {
   useEffect(() => {
     const firstLoad = async () => {
       try {
+        console.log('storing user object');
+        await Storage.setItem({key: 'loggedInUser', value: JSON.stringify(user)});
         const savedLanguage = await Storage.getItem({key: 'selectedLanguage'});
         console.log(`saved language from storage: ${savedLanguage}`);
         setSelectedLanguage(savedLanguage || "en");
@@ -97,8 +96,6 @@ const ChatApp = (props: ChatProps) => {
   }
 
   const handleLanguageSelect = (selectedValue: string) => {
-    // TODO: store locally
-    // localStorage.setItem("selectedLanguage", selectedValue);
     console.log("setting language to " + selectedValue);
     setSelectedLanguage(selectedValue);
     saveSelectedLanguage(selectedValue);
@@ -106,7 +103,6 @@ const ChatApp = (props: ChatProps) => {
 
   const onItem = async (item: TopicItem) => {
     try {
-      console.log(`listening to: ${selectedLanguage}`);
       const message = JSON.parse(item.valueString()) as ChatMessageEvent;
       // TODO: Image support
       // if (message.messageType === MessageType.IMAGE) {
