@@ -22,6 +22,7 @@ export default function App() {
     },
     input: {
       height: 40,
+      width: '80%',
       margin: 12,
       borderWidth: 1,
       padding: 10,
@@ -32,7 +33,8 @@ export default function App() {
     <View style={styles.container}>
       <TextInput
         style={styles.input}
-        placeholder={"Enter your username"}
+        placeholder={'Enter your username'}
+        placeholderTextColor={'#999999'}
         multiline={false}
         value={inputValue}
         onChangeText={setInputValue}/>
