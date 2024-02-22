@@ -1,4 +1,3 @@
-console.log('ok');
 import {decode, encode} from 'base-64';
 
 if (!global.btoa) {
@@ -13,4 +12,3 @@ Object.assign(global, {
   TextEncoder: TextEncodingPolyfill.TextEncoder,
   TextDecoder: TextEncodingPolyfill.TextDecoder,
 });
-console.log('ok');

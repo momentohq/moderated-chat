@@ -3,7 +3,6 @@ import './polyfill';
 import ChatApp from './ChatApp';
 import {useState} from 'react';
 import {Button, StyleSheet, TextInput, View} from 'react-native';
-import MomentoTest from './MomentoTestApp';
 
 export default function App() {
   const [inputValue, setInputValue] = useState("");
@@ -28,20 +27,19 @@ export default function App() {
     },
   });
 
-  return (<MomentoTest/>);
-  // return existingUser == "" ? (
-  //   <View style={styles.container}>
-  //     <TextInput
-  //       style={styles.input}
-  //       placeholder={"Enter your username"}
-  //       multiline={false}
-  //       value={inputValue}
-  //       onChangeText={setInputValue}/>
-  //     <Button
-  //       title={"Submit"}
-  //       onPress={login}/>
-  //   </View>
-  // ) : (
-  //   <ChatApp username={existingUser} />
-  // );
+  return existingUser == "" ? (
+    <View style={styles.container}>
+      <TextInput
+        style={styles.input}
+        placeholder={"Enter your username"}
+        multiline={false}
+        value={inputValue}
+        onChangeText={setInputValue}/>
+      <Button
+        title={"Submit"}
+        onPress={login}/>
+    </View>
+  ) : (
+    <ChatApp username={existingUser} />
+  );
 }
