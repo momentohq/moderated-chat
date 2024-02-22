@@ -236,21 +236,21 @@ const ChatApp = (props: ChatProps) => {
           data={chats}
           renderItem={
             ({item}) =>
-              <Text style={(item.user.id == user.id) ? styles.myItem : styles.item}>
-                {item.user.id} - {user.id}
-
-
+              <View style={(item.user.id == user.id) ? styles.myItem : styles.item}>
+                <Text>
                 {item.user.username} - {new Date(item.timestamp).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
-
+                </Text>
+                <Text>
                 {item.messageType == 'text' ? (
-                  "\n" + item.message + "\n"
+                  item.message
                 ) : (
-                  '\nimage data\n'
+                  'image data'
                 )}
-            </Text>
+                </Text>
+              </View>
           }/>
       </View>
       <View>
