@@ -16,6 +16,7 @@ import {TopicItem, TopicSubscribe} from '@gomomento/sdk-web';
 import {sendTextMessage, subscribeToTopic} from './utils/momento-web';
 import Storage from 'expo-storage';
 import MoChatSend from './assets/mochat-send-button';
+import MoChatPeekUp from './assets/mochat-mo-peek-up';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 export interface LanguageOption {
@@ -194,57 +195,63 @@ const ChatApp = (props: ChatProps) => {
       backgroundColor: '#25392B',
     },
     banner: {
-      // flex: 1,
-      backgroundColor: '#cccccc',
-      // alignItems: 'center',
+      flexDirection: 'row',
+      backgroundColor: '#25392B',
+      alignItems: 'center',
       justifyContent: 'space-evenly',
-      height: '20%',
       width: '100%',
-      padding: '5%'
-    },
-    bannerItem: {
-      width: '50%'
+      padding: 4
     },
     myItem: {
-      backgroundColor: '#ffffff',
-      padding: 20,
-      marginVertical: 8,
-      marginHorizontal: 16,
+      backgroundColor: '#ffcccc',
     },
     item: {
       backgroundColor: '#cccccc',
       padding: 20,
       marginVertical: 8,
       marginHorizontal: 16,
+      borderWidth: 1,
+      borderRadius: 10,
     },
     input: {
       height: 40,
       margin: 12,
       borderWidth: 1,
       padding: 10,
+      width: '70%',
     },
+    messageBar: {
+      flexDirection: 'row',
+      backgroundColor: '#25392B',
+      justifyContent: 'space-evenly',
+      alignItems: 'center',
+      padding: 4,
+    }
   });
   const themeContainerStyle = useColorScheme() === 'dark' ? styles.darkContainer : styles.lightContainer;
 
   return (
     <View style={styles.appContainer}>
       <View style={styles.banner}>
-        <Text style={styles.bannerItem}>Welcome to MoChat!</Text>
-        <View style={styles.bannerItem}><SelectList
+        <MoChatPeekUp width={32} height={32} />
+        <Text style={{color: '#ffffff', fontWeight: 'bold'}}>Welcome to MoChat!</Text>
+        <SelectList
+          inputStyles={{color: '#ffffff'}}
+          dropdownTextStyles={{color: '#ffffff'}}
           setSelected={(val) => handleLanguageSelect(val)}
           data={availableLanguages}
           save="key"
           search={false}
           defaultOption={{key:'en', value: '🇺🇸 English'}}
           maxHeight={300}
-        /></View>
+        />
       </View>
       <View style={[styles.container, themeContainerStyle]}>
         <FlatList
           data={chats}
           renderItem={
             ({item}) =>
-              <View style={(item.user.id == user.id) ? styles.myItem : styles.item}>
+              <View style={(item.user.id == user.id) ? [styles.item, styles.myItem] : styles.item}>
                 <Text>
                 {item.user.username} - {new Date(item.timestamp).toLocaleTimeString([], {
                   hour: "2-digit",
@@ -261,10 +268,11 @@ const ChatApp = (props: ChatProps) => {
               </View>
           }/>
       </View>
-      <View>
+      <View style={styles.messageBar}>
         <TextInput
           style={styles.input}
           placeholder={'Type your message...'}
+          placeholderTextColor={'#999999'}
           value={textInput}
           onChangeText={setTextInput}
         ></TextInput>
