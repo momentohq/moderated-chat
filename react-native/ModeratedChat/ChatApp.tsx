@@ -5,7 +5,8 @@ import {
   TextInput,
   Image,
   Pressable,
-  FlatList
+  FlatList,
+  useColorScheme
 } from 'react-native';
 import translation from './api/translation';
 import {useEffect, useState} from 'react';
@@ -186,6 +187,12 @@ const ChatApp = (props: ChatProps) => {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    lightContainer: {
+      backgroundColor: '#ffffff',
+    },
+    darkContainer: {
+      backgroundColor: '#25392B',
+    },
     banner: {
       // flex: 1,
       backgroundColor: '#cccccc',
@@ -217,6 +224,7 @@ const ChatApp = (props: ChatProps) => {
       padding: 10,
     },
   });
+  const themeContainerStyle = useColorScheme() === 'dark' ? styles.darkContainer : styles.lightContainer;
 
   return (
     <View style={styles.appContainer}>
@@ -231,7 +239,7 @@ const ChatApp = (props: ChatProps) => {
           maxHeight={300}
         /></View>
       </View>
-      <View style={styles.container}>
+      <View style={[styles.container, themeContainerStyle]}>
         <FlatList
           data={chats}
           renderItem={
