@@ -178,15 +178,11 @@ const ChatApp = (props: ChatProps) => {
     appContainer: {
       flex: 1,
       paddingTop: insets.top,
-      paddingBottom: insets.bottom,
-      paddingLeft: insets.left,
-      paddingRight: insets.right
     },
     container: {
       flex: 1,
       backgroundColor: '#25392B',
-      alignItems: 'center',
-      justifyContent: 'center',
+      width: "100%",
     },
     lightContainer: {
       backgroundColor: '#ffffff',
@@ -200,15 +196,17 @@ const ChatApp = (props: ChatProps) => {
       alignItems: 'center',
       justifyContent: 'space-evenly',
       width: '100%',
-      padding: 4
+      padding: 4,
+      zIndex: 999,
+      overflow: 'visible',
     },
     myItem: {
       backgroundColor: '#ffcccc',
     },
     item: {
       backgroundColor: '#cccccc',
-      padding: 20,
-      marginVertical: 8,
+      padding: 8,
+      marginVertical: 4,
       marginHorizontal: 16,
       borderWidth: 1,
       borderRadius: 10,
@@ -232,12 +230,20 @@ const ChatApp = (props: ChatProps) => {
 
   return (
     <View style={styles.appContainer}>
-      <View style={styles.banner}>
+      <View style={[styles.banner]}>
         <MoChatPeekUp width={32} height={32} />
         <Text style={{color: '#ffffff', fontWeight: 'bold'}}>Welcome to MoChat!</Text>
         <SelectList
-          inputStyles={{color: '#ffffff'}}
+          inputStyles={{color: '#ffffff', width: 80}}
           dropdownTextStyles={{color: '#ffffff'}}
+          dropdownStyles={{
+            position: 'absolute',
+            top: 40,
+            width: "100%",
+            zIndex: 999,
+            overflow: 'visible',
+            backgroundColor: '#25392B'
+          }}
           setSelected={(val) => handleLanguageSelect(val)}
           data={availableLanguages}
           save="key"
