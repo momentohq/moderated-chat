@@ -200,6 +200,20 @@ const ChatApp = (props: ChatProps) => {
       zIndex: 999,
       overflow: 'visible',
     },
+    dropdownInput: {
+      width: 85,
+    },
+    dropdownText: {
+      color: '#ffffff'
+    },
+    dropdownOptionsList: {
+      position: 'absolute',
+      top: 40,
+      width: "100%",
+      zIndex: 999,
+      overflow: 'visible',
+      backgroundColor: '#25392B'
+    },
     myItem: {
       backgroundColor: '#ffcccc',
     },
@@ -224,6 +238,10 @@ const ChatApp = (props: ChatProps) => {
       justifyContent: 'space-evenly',
       alignItems: 'center',
       padding: 4,
+    },
+    welcomeMessage: {
+      color: '#ffffff',
+      fontWeight: 'bold',
     }
   });
   const themeContainerStyle = useColorScheme() === 'dark' ? styles.darkContainer : styles.lightContainer;
@@ -232,18 +250,11 @@ const ChatApp = (props: ChatProps) => {
     <View style={styles.appContainer}>
       <View style={[styles.banner]}>
         <MoChatPeekUp width={32} height={32} />
-        <Text style={{color: '#ffffff', fontWeight: 'bold'}}>Welcome to MoChat!</Text>
+        <Text style={styles.welcomeMessage}>Welcome to MoChat!</Text>
         <SelectList
-          inputStyles={{color: '#ffffff', width: 80}}
-          dropdownTextStyles={{color: '#ffffff'}}
-          dropdownStyles={{
-            position: 'absolute',
-            top: 40,
-            width: "100%",
-            zIndex: 999,
-            overflow: 'visible',
-            backgroundColor: '#25392B'
-          }}
+          inputStyles={[styles.dropdownInput, styles.dropdownText]}
+          dropdownTextStyles={styles.dropdownText}
+          dropdownStyles={styles.dropdownOptionsList}
           setSelected={(val) => handleLanguageSelect(val)}
           data={availableLanguages}
           save="key"
