@@ -185,7 +185,7 @@ const ChatApp = (props: ChatProps) => {
       width: "100%",
     },
     lightContainer: {
-      backgroundColor: '#ffffff',
+      backgroundColor: '#c4f135',
     },
     darkContainer: {
       backgroundColor: '#25392B',
@@ -201,10 +201,11 @@ const ChatApp = (props: ChatProps) => {
       overflow: 'visible',
     },
     dropdownInput: {
+      color: '#ffffff',
       width: 85,
     },
     dropdownText: {
-      color: '#ffffff'
+      color: '#ffffff',
     },
     dropdownOptionsList: {
       position: 'absolute',
@@ -240,7 +241,7 @@ const ChatApp = (props: ChatProps) => {
       padding: 4,
     },
     welcomeMessage: {
-      color: '#ffffff',
+      color: '#c4f135',
       fontWeight: 'bold',
     }
   });
@@ -252,7 +253,7 @@ const ChatApp = (props: ChatProps) => {
         <MoChatPeekUp width={32} height={32} />
         <Text style={styles.welcomeMessage}>Welcome to MoChat!</Text>
         <SelectList
-          inputStyles={[styles.dropdownInput, styles.dropdownText]}
+          inputStyles={styles.dropdownInput}
           dropdownTextStyles={styles.dropdownText}
           dropdownStyles={styles.dropdownOptionsList}
           setSelected={(val) => handleLanguageSelect(val)}
