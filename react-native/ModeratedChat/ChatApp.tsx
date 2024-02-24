@@ -9,7 +9,7 @@ import {
   useColorScheme
 } from 'react-native';
 import translation from './api/translation';
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {ChatMessageEvent, MessageType, User} from './shared/models';
 import {SelectList} from 'react-native-dropdown-select-list/index';
 import {TopicItem, TopicSubscribe} from '@gomomento/sdk-web';
@@ -37,16 +37,14 @@ const ChatApp = (props: ChatProps) => {
     LanguageOption[]
   >([]);
 
+  const flatListRef = useRef(null);
   const fetchLatestChats = () => {
-    console.log(`fetching messages for language: ${selectedLanguage}`);
     if (!selectedLanguage) {
-      console.log("selected language not set . . . waiting");
       return;
     }
     translation
       .getLatestChats(selectedLanguage)
       .then((_chats) => {
-        console.log(`got ${_chats.messages.length} messages`);
         setChats(_chats.messages);
       })
       .catch((e) => console.error("error fetching latest chats", e));
@@ -61,8 +59,6 @@ const ChatApp = (props: ChatProps) => {
         for (const {label, value} of supportedLanguages) {
           dropdownLanguages.push({key: value, value: label})
         }
-        console.log(supportedLanguages);
-        console.log(dropdownLanguages);
         setAvailableLanguages(dropdownLanguages);
       })
       .catch((e) => console.error("error fetching supported languages", e));
@@ -71,36 +67,29 @@ const ChatApp = (props: ChatProps) => {
   useEffect(() => {
     const firstLoad = async () => {
       try {
-        console.log('storing user object');
         await Storage.setItem({key: 'loggedInUser', value: JSON.stringify(user)});
         const savedLanguage = await Storage.getItem({key: 'selectedLanguage'});
-        console.log(`saved language from storage: ${savedLanguage}`);
         setSelectedLanguage(savedLanguage || "en");
-        console.log(`using saved language: ${savedLanguage || "en"}`);
       } catch (err) {
         console.log(err);
       }
     };
-    firstLoad();
+    void firstLoad();
     fetchLatestChats();
     fetchSupportedLanguages();
-
-  }, []);
+  }, [user]);
 
   const saveSelectedLanguage = async (lang: string) => {
     try {
-      console.log(`in saveSelectedLanguage with ${lang}`);
       await Storage.setItem({key: 'selectedLanguage', value: lang});
-      console.log(`retrieving stored item: ${await Storage.getItem({key: 'selectedLanguage'})}`);
     } catch (err) {
       console.log(err);
     }
   }
 
   const handleLanguageSelect = (selectedValue: string) => {
-    console.log("setting language to " + selectedValue);
     setSelectedLanguage(selectedValue);
-    saveSelectedLanguage(selectedValue);
+    void saveSelectedLanguage(selectedValue);
   };
 
   const onItem = async (item: TopicItem) => {
@@ -132,7 +121,6 @@ const ChatApp = (props: ChatProps) => {
 
   const onSendMessage = async () => {
     if (textInput) {
-      console.log(`sending message ${textInput}`);
       await sendTextMessage({
         messageType: MessageType.TEXT,
         message: textInput,
@@ -155,23 +143,16 @@ const ChatApp = (props: ChatProps) => {
   };
 
   useEffect(() => {
+    if (!selectedLanguage) {
+      return;
+    }
     subscribeToTopic(selectedLanguage, onItem, onError)
       .then(() => {
-        console.log("successfully subscribed");
+        // celebrate a job well done
       })
       .catch((e) => console.error("error subscribing to topic", e));
-    void fetchLatestChats();
+    fetchLatestChats();
   }, [selectedLanguage]);
-
-  // const scrollToBottom = () => {
-  //   const chatContainer = document.querySelector(".scrollbar-width-thin");
-  //   const scrollHeight = chatContainer?.scrollHeight;
-  //   chatContainer?.scrollTo(0, scrollHeight ?? 0);
-  // };
-  //
-  // useEffect(() => {
-  //   scrollToBottom();
-  // }, [chats]);
 
   const insets = useSafeAreaInsets();
   const styles = StyleSheet.create({
@@ -266,7 +247,10 @@ const ChatApp = (props: ChatProps) => {
       </View>
       <View style={[styles.container, themeContainerStyle]}>
         <FlatList
+          ref={flatListRef}
           data={chats}
+          onContentSizeChange={() => flatListRef.current.scrollToEnd()}
+          persistentScrollbar={true}
           renderItem={
             ({item}) =>
               <View style={(item.user.id == user.id) ? [styles.item, styles.myItem] : styles.item}>
