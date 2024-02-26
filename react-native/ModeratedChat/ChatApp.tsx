@@ -18,6 +18,7 @@ import Storage from 'expo-storage';
 import MoChatSend from './assets/mochat-send-button';
 import MoChatPeekUp from './assets/mochat-mo-peek-up';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 
 export interface LanguageOption {
   value: string;
@@ -32,6 +33,7 @@ const ChatApp = (props: ChatProps) => {
   const user = props.user;
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
   const [textInput, setTextInput] = useState("");
+  const [imageInput, setImageInput] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [availableLanguages, setAvailableLanguages] = useState<
     LanguageOption[]
@@ -228,6 +230,26 @@ const ChatApp = (props: ChatProps) => {
   });
   const themeContainerStyle = useColorScheme() === 'dark' ? styles.darkContainer : styles.lightContainer;
 
+  const pickImageAsync = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+    if (!result.canceled) {
+      console.log(`You selected ${JSON.stringify(result.assets)}`);
+      if (result.assets.length > 1) {
+        alert('Please select only one image at a time');
+        return;
+      }
+      if (result.assets[0].fileSize > 1000000) {
+        alert('Please select an image smaller than 1MB');
+        return;
+      }
+      // setImageInput(result.uri);
+    }
+  }
+
   return (
     <View style={styles.appContainer}>
       <View style={[styles.banner]}>
@@ -278,7 +300,7 @@ const ChatApp = (props: ChatProps) => {
           value={textInput}
           onChangeText={setTextInput}
         ></TextInput>
-        <Pressable onPress={() => alert("woohoo!")}>
+        <Pressable onPress={pickImageAsync}>
           <Image
             source={require('./assets/attachment-icon.png')}/>
         </Pressable>

@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/MomentoLogoGreen.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#25392B"
     },
     "assetBundlePatterns": [
       "**/*"
