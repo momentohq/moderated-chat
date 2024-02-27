@@ -13,12 +13,15 @@ import {useEffect, useRef, useState} from 'react';
 import {ChatMessageEvent, MessageType, User} from './shared/models';
 import {SelectList} from 'react-native-dropdown-select-list/index';
 import {TopicItem, TopicSubscribe} from '@gomomento/sdk-web';
-import {sendTextMessage, subscribeToTopic} from './utils/momento-web';
+import {getImageMessage, sendImageMessage, sendTextMessage, subscribeToTopic} from './utils/momento-web';
 import Storage from 'expo-storage';
 import MoChatSend from './assets/mochat-send-button';
 import MoChatPeekUp from './assets/mochat-mo-peek-up';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import {manipulateAsync, SaveFormat} from 'expo-image-manipulator';
+import {getInfoAsync} from 'expo-file-system';
+import {ImagePickerAsset} from 'expo-image-picker';
 
 export interface LanguageOption {
   value: string;
@@ -33,7 +36,6 @@ const ChatApp = (props: ChatProps) => {
   const user = props.user;
   const [chats, setChats] = useState<ChatMessageEvent[]>([]);
   const [textInput, setTextInput] = useState("");
-  const [imageInput, setImageInput] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [availableLanguages, setAvailableLanguages] = useState<
     LanguageOption[]
@@ -98,12 +100,12 @@ const ChatApp = (props: ChatProps) => {
     try {
       const message = JSON.parse(item.valueString()) as ChatMessageEvent;
       // TODO: Image support
-      // if (message.messageType === MessageType.IMAGE) {
-      //   message.message = await getImageMessage({
-      //     imageId: message.message,
-      //     sourceLanguage: selectedLanguage,
-      //   });
-      // }
+      if (message.messageType === MessageType.IMAGE) {
+        message.message = await getImageMessage({
+          imageId: message.message,
+          sourceLanguage: selectedLanguage,
+        });
+      }
       setChats((curr) => [...curr, message]);
     } catch (e) {
       console.error("unable to parse chat message", e);
@@ -122,26 +124,12 @@ const ChatApp = (props: ChatProps) => {
   };
 
   const onSendMessage = async () => {
-    if (textInput) {
-      await sendTextMessage({
-        messageType: MessageType.TEXT,
-        message: textInput,
-        sourceLanguage: selectedLanguage,
-      });
-      setTextInput("");
-    } else {
-      // TODO: image support
-      console.log("someday i'll send an image");
-    }
-    // } else if (imageInput) {
-    //   const imageAsBase64 = await readFileAsBase64(imageInput);
-    //   await sendImageMessage({
-    //     base64Image: imageAsBase64,
-    //     sourceLanguage: selectedLanguage,
-    //   });
-    //   setImageInput(null);
-    //   closeImagePreview();
-    // }
+    await sendTextMessage({
+      messageType: MessageType.TEXT,
+      message: textInput,
+      sourceLanguage: selectedLanguage,
+    });
+    setTextInput("");
   };
 
   useEffect(() => {
@@ -215,6 +203,8 @@ const ChatApp = (props: ChatProps) => {
       borderWidth: 1,
       padding: 10,
       width: '70%',
+      color: '#ffffff',
+      borderColor: '#c4f135',
     },
     messageBar: {
       flexDirection: 'row',
@@ -230,24 +220,42 @@ const ChatApp = (props: ChatProps) => {
   });
   const themeContainerStyle = useColorScheme() === 'dark' ? styles.darkContainer : styles.lightContainer;
 
+  const maxImageSize = 500000;
+  const resizeImage = async (asset: ImagePickerAsset) => {
+    const origInfo = await getInfoAsync(asset.uri);
+    if (!origInfo.exists) {
+      return;
+    }
+    const origSize = asset.fileSize;
+    const shrinkBy = Math.ceil(origSize / maxImageSize);
+    const newWidth = Math.floor(asset.width / shrinkBy);
+    const manipResult = await manipulateAsync(
+      asset.uri,
+      [{ resize: { width: newWidth } }],
+      { compress: 0.3, format: SaveFormat.JPEG, base64: true }
+    );
+    return manipResult.base64;
+  }
+
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
       quality: 1,
+      base64: true
     });
-    if (!result.canceled) {
-      console.log(`You selected ${JSON.stringify(result.assets)}`);
-      if (result.assets.length > 1) {
-        alert('Please select only one image at a time');
-        return;
-      }
-      if (result.assets[0].fileSize > 1000000) {
-        alert('Please select an image smaller than 1MB');
-        return;
-      }
-      // setImageInput(result.uri);
+
+    if (result.canceled) {
+      return;
     }
+    const asset = result.assets[0];
+    let base64Image = asset.base64;
+    if (asset.fileSize > maxImageSize) {
+      base64Image = await resizeImage(asset);
+    }
+    await sendImageMessage({
+      base64Image: base64Image,
+      sourceLanguage: selectedLanguage,
+    });
   }
 
   return (
@@ -271,7 +279,7 @@ const ChatApp = (props: ChatProps) => {
         <FlatList
           ref={flatListRef}
           data={chats}
-          onContentSizeChange={() => flatListRef.current.scrollToEnd()}
+          onContentSizeChange={() => flatListRef.current.scrollToEnd({animated: true})}
           persistentScrollbar={true}
           renderItem={
             ({item}) =>
@@ -282,13 +290,17 @@ const ChatApp = (props: ChatProps) => {
                   minute: "2-digit",
                 })}
                 </Text>
-                <Text>
+                <View>
                 {item.messageType == 'text' ? (
-                  item.message
+                  <Text>{item.message}</Text>
                 ) : (
-                  'image data'
+                  <Image
+                    source={{uri: `data:image/jpeg;base64,${item.message}`}}
+                    width={300}
+                    height={300}
+                  />
                 )}
-                </Text>
+                </View>
               </View>
           }/>
       </View>

@@ -28,7 +28,9 @@
     "text-encoding": "^0.7.0",
     "typescript": "^5.1.3",
     "uuid": "^9.0.1",
-    "expo-image-picker": "~14.3.2"
+    "expo-image-picker": "~14.3.2",
+    "expo-image-manipulator": "~11.3.0",
+    "expo-file-system": "~15.4.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
