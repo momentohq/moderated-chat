@@ -99,7 +99,6 @@ const ChatApp = (props: ChatProps) => {
   const onItem = async (item: TopicItem) => {
     try {
       const message = JSON.parse(item.valueString()) as ChatMessageEvent;
-      // TODO: Image support
       if (message.messageType === MessageType.IMAGE) {
         message.message = await getImageMessage({
           imageId: message.message,
@@ -187,10 +186,10 @@ const ChatApp = (props: ChatProps) => {
       backgroundColor: '#25392B'
     },
     myItem: {
-      backgroundColor: '#ffcccc',
+      backgroundColor: '#00C88C',
     },
     item: {
-      backgroundColor: '#cccccc',
+      backgroundColor: '#E1D9D5',
       padding: 8,
       marginVertical: 4,
       marginHorizontal: 16,
@@ -216,6 +215,11 @@ const ChatApp = (props: ChatProps) => {
     welcomeMessage: {
       color: '#c4f135',
       fontWeight: 'bold',
+    },
+    image: {
+      width: 300,
+      height: 300,
+      resizeMode: 'contain',
     }
   });
   const themeContainerStyle = useColorScheme() === 'dark' ? styles.darkContainer : styles.lightContainer;
@@ -284,20 +288,21 @@ const ChatApp = (props: ChatProps) => {
           renderItem={
             ({item}) =>
               <View style={(item.user.id == user.id) ? [styles.item, styles.myItem] : styles.item}>
-                <Text>
-                {item.user.username} - {new Date(item.timestamp).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-                </Text>
-                <View>
+                <View style={{flexDirection: 'row'}}>
+                  <Text style={{fontWeight: 'bold'}}>{item.user.username}</Text>
+                  <Text> - {new Date(item.timestamp).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </View>
+                <View style={{padding: 4}}>
                 {item.messageType == 'text' ? (
                   <Text>{item.message}</Text>
                 ) : (
                   <Image
                     source={{uri: `data:image/jpeg;base64,${item.message}`}}
-                    width={300}
-                    height={300}
+                    style={styles.image}
                   />
                 )}
                 </View>
