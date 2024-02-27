@@ -155,10 +155,10 @@ const ChatApp = (props: ChatProps) => {
       width: "100%",
     },
     lightContainer: {
-      backgroundColor: '#c4f135',
+      backgroundColor: '#25392B',
     },
     darkContainer: {
-      backgroundColor: '#25392B',
+      backgroundColor: '#191C1A',
     },
     banner: {
       flexDirection: 'row',
