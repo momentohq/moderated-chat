@@ -10,7 +10,6 @@ import {
   CacheGet,
 } from "@gomomento/sdk-web";
 import TranslationApi from "../api/translation";
-// import imageCompression from "browser-image-compression";
 import { MessageType, type PostMessageEvent } from '../shared/models';
 import { v4 } from "uuid";
 import { getUser } from "./user";
@@ -179,18 +178,3 @@ export async function getImageMessage({
   }
   return resp.value() ?? "";
 }
-
-// export const compressImage = async (imageFile: File): Promise<File> => {
-//   try {
-//     const options = {
-//       maxSizeMB: 0.07,
-//       maxWidthOrHeight: 800,
-//       useWebWorker: true,
-//     };
-//
-//     return await imageCompression(imageFile, options);
-//   } catch (error) {
-//     console.error("Error compressing image:", error);
-//     throw error;
-//   }
-// };
