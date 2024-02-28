@@ -28,4 +28,4 @@ The following command will build the app using the preview profile defined in th
 eas build --platform android --profile preview
 ```
 
-At the end of the build process, you'll be prompted to open the build in the Expo Go app on an emulator. You can also download the APK file from the `Builds` section of the `ModeratedChat` project page and [install it manually](https://www.lifewire.com/install-apk-on-android-4177185#toc-transfer-the-apk-installer-via-usb) on your Android device.
+At the end of the build process, you'll be prompted to open the build in the Expo Go app on an emulator. You can also download the APK file from the `Builds` section of the `ModeratedChat` project page and install it manually [on your Android device](https://www.lifewire.com/install-apk-on-android-4177185#toc-transfer-the-apk-installer-via-usb) or [on an emulator](https://developer.android.com/studio/run/emulator-install-add-files).
