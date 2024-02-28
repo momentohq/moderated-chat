@@ -1,35 +1,31 @@
-# Example expo app using Momento Web SDK
-This is a demo application which shows how the momento web sdk can be used inside a react native application. [Here](https://www.notion.so/momentohq/React-Native-Testing-Notes-b00832e0d87642e2ae51d5f54704f705?pvs=4) is a notion doc that dives into more detail on how we got it working
+# Moderated Chat Using React Native Client
 
 ## Getting Started
 
-You will need the expo application installed on your phone
+This project uses [Expo Go](https://docs.expo.dev/get-started/expo-go/), a free open-source sandbox that makes it quick and easy to experiment with React Native on Android and iOS devices. You will need the [expo application](https://expo.dev/client) installed on your phone, or you can also use device emulators for [Android](https://docs.expo.dev/workflow/android-studio-emulator/) and [iOS](https://docs.expo.dev/workflow/ios-simulator/).
 
-- [ios](https://apps.apple.com/us/app/expo-go/id982107779)
-- [android](https://play.google.com/store/apps/details?id=host.exp.exponent&hl=en_US&gl=US&pli=1)
 
-run 
-- npm install
-- In the `app.js` file, add your authentication token. TODO this token should be gotten from a token vending machine
-- Make sure a cache named `test` is created that this above token has access to
-- open the file `node_modules/@gomomento/sdk-web/dist/src/index.js`
-- Add the following lines to the start of the file
-```javascript
-const TextEncodingPolyfill = require('text-encoding');
-Object.assign(global, {
-    TextEncoder: TextEncodingPolyfill.TextEncoder,
-    TextDecoder: TextEncodingPolyfill.TextDecoder,
-});
-import {decode, encode} from 'base-64'
+## Running the example using Expo Go
 
-if (!global.btoa) {
-    global.btoa = encode;
-}
+In the `react-native/ModeratedChat` directory:
 
-if (!global.atob) {
-    global.atob = decode;
-}
+- run `npm install`
+- run `npx expo start`
+- run the app on your phone:
+  - scan QR Code with your phone to open it in the Expo Go app
+- or run the app on an emulator:
+  - launch one of the device emulators as described in the instructions displayed after you start the Expo server
+
+## Android Notes
+
+If you are using an Android device or emulator, you may encounter problems receiving incoming chat messages caused by a known networking issue in Android development builds. To resolve the issue you can produce an [Expo Application Services](https://docs.expo.dev/eas/) build of the app and run it on your device or an emulator.
+
+Using EAS requires an [Expo account](https://docs.expo.dev/build/setup/#an-expo-user-account) and EAS offers a free tier, so you can build and test your app free of charge. Once you have an account, follow the instructions to [install the EAS CLI](https://docs.expo.dev/build/setup/#install-the-latest-eas-cli), [log in to your Expo account](https://docs.expo.dev/build/setup/#log-in-to-your-expo-account), and [configure your project](https://docs.expo.dev/build/setup/#configure-the-project).
+
+The following command will build the app using the preview profile defined in the `eas.json` provided in the project directory:
+
 ```
-- npx expo start
-- scan QR Code with your phone, it will open the expo application
-- Logs for the application can be seen in the terminal 
+eas build --platform android --profile preview
+```
+
+At the end of the build process, you'll be prompted to open the build in the Expo Go app on an emulator. You can also download the APK file from the `Builds` section of the `ModeratedChat` project page and [install it manually](https://www.lifewire.com/install-apk-on-android-4177185#toc-transfer-the-apk-installer-via-usb) on your Android device.
