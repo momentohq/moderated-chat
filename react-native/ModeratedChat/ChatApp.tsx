@@ -198,12 +198,13 @@ const ChatApp = (props: ChatProps) => {
     },
     input: {
       height: 40,
-      margin: 12,
+      margin: 4,
       borderWidth: 1,
-      padding: 10,
+      padding: 4,
       width: '70%',
       color: '#ffffff',
-      borderColor: '#c4f135',
+      borderColor: '#999999',
+      borderRadius: 10,
     },
     messageBar: {
       flexDirection: 'row',
@@ -213,7 +214,7 @@ const ChatApp = (props: ChatProps) => {
       padding: 4,
     },
     welcomeMessage: {
-      color: '#c4f135',
+      color: '#ffffff',
       fontWeight: 'bold',
     },
     image: {
@@ -319,7 +320,8 @@ const ChatApp = (props: ChatProps) => {
         ></TextInput>
         <Pressable onPress={pickImageAsync}>
           <Image
-            source={require('./assets/attachment-icon.png')}/>
+            source={require('./assets/attachment-icon.png')}
+          />
         </Pressable>
         <Pressable onPress={onSendMessage}>
           <MoChatSend width={32} height={32} />
