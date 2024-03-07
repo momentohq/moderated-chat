@@ -16,6 +16,10 @@ In the `react-native/ModeratedChat` directory:
 - or run the app on an emulator:
   - launch one of the device emulators as described in the instructions displayed after you start the Expo server
 
+## Polyfills
+
+React Native does not natively support the Base64 encoding and decoding functions `atob` and `btoa` or the `TextEncoder` and `TextDecoder` classes that are available in modern web browsers and used by the [Momento Web SDK](https://github.com/momentohq/client-sdk-javascript). This project uses the `polyfill.ts` file, imported at the beginning of `App.tsx`, to provide these functions.
+
 ## Android Notes
 
 If you are using an Android device or emulator, you may encounter problems receiving incoming chat messages caused by a known networking issue in Android development builds. To resolve the issue you can produce an [Expo Application Services](https://docs.expo.dev/eas/) build of the app and run it on your device or an emulator.
