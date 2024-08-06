@@ -15,7 +15,7 @@
     "@types/jest": "^27.5.2",
     "@types/node": "10.17.27",
     "@types/prettier": "2.6.0",
-    "cdk": "2.108.1",
+    "cdk": "2.151.0",
     "jest": "^27.5.1",
     "ts-jest": "^27.1.4",
     "ts-node": "^10.9.1",
@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-sts": "3.433.0",
-    "aws-cdk-lib": "2.108.1",
+    "aws-cdk-lib": "2.151.0",
     "constructs": "10.3.0"
   }
 }
