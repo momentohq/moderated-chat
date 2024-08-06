@@ -2,6 +2,7 @@ import { type LanguageOption } from "../ChatApp";
 import { type ChatMessageEvent, type User } from "../shared/models";
 
 class TranslationApi {
+  // TODO: update API DOMAIN when moving to prod
   private readonly baseUrl =
     "https://chat-api.developer-mst-dev.preprod.a.momentohq.com";
   async createToken(

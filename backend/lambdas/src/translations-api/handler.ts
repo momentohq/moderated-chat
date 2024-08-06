@@ -70,7 +70,6 @@ export const createTranslationsApi = async (): Promise<API> => {
     configuration: Configurations.Lambda.latest(),
     defaultTtlSeconds: 60 * 60,
   });
-  await cacheClient.createCache(cacheName);
 
   api.use((req: Request, res: Response, next: NextFunction) => {
     res.cors({});

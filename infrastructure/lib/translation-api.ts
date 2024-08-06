@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import {Fn, RemovalPolicy} from 'aws-cdk-lib';
+import {Fn, RemovalPolicy, CustomResource} from 'aws-cdk-lib';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import {MethodLoggingLevel} from 'aws-cdk-lib/aws-apigateway';
 import * as path from 'path';
@@ -28,15 +28,19 @@ export class TranslationApiStack extends cdk.Stack {
         super(scope, id, cdkStackProps);
 
         const restApiName = 'translation';
-        const logGroup = new logs.LogGroup(this, 'AccessLogs', {
-            retention: 90, // Keep logs for 90 days
-            logGroupName: Fn.sub(
-                `${restApiName}-demo-gateway-logs-\${AWS::Region}`
-            ),
-            removalPolicy: props.isDevDeploy
-                ? RemovalPolicy.DESTROY
-                : RemovalPolicy.RETAIN,
-        });
+
+        // Commented out these logs for now as they required some sort of 
+        // manual configuration in the console I couldn't figure out.
+        // const logGroup = new logs.LogGroup(this, 'AccessLogs', {
+        //     retention: 90, // Keep logs for 90 days
+        //     logGroupName: Fn.sub(
+        //         `${restApiName}-demo-gateway-logs-\${AWS::Region}`
+        //     ),
+        //     removalPolicy: props.isDevDeploy
+        //         ? RemovalPolicy.DESTROY
+        //         : RemovalPolicy.RETAIN,
+        // });
+
         // Register the subdomain and create a certificate for it
         const hostedZone = route53.HostedZone.fromLookup(
             this,
@@ -56,12 +60,12 @@ export class TranslationApiStack extends cdk.Stack {
             description: "Rest api that contains the backend code/logic for the moderated chat demo",
             deployOptions: {
                 stageName: 'prod',
-                accessLogDestination: new apigw.LogGroupLogDestination(logGroup),
-                accessLogFormat: apigw.AccessLogFormat.jsonWithStandardFields(),
+                // accessLogDestination: new apigw.LogGroupLogDestination(logGroup),
+                // accessLogFormat: apigw.AccessLogFormat.jsonWithStandardFields(),
                 throttlingRateLimit: 10,
                 throttlingBurstLimit: 25,
                 metricsEnabled: true,
-                loggingLevel: MethodLoggingLevel.INFO,
+                // loggingLevel: MethodLoggingLevel.INFO,
                 description: 'translation endpoint for momento console',
             },
             defaultCorsPreflightOptions: {
@@ -115,8 +119,58 @@ export class TranslationApiStack extends cdk.Stack {
             secretsPath
         );
         translationSecrets.grantRead(v1TranslationApi);
+        translationSecrets.grantWrite(v1TranslationApi);
 
         this.addUnprotectedProxyEndpoint(v1TranslationApi, 'v1');
+
+        // This lambda creates the required cache and webhook if it doesn't already exist.
+        // Runs only when doing a cdk deploy
+        const setupLambda = new lambda.Function(this, 'translation-resources-setup', {
+            functionName: `${restApiName}-api-resources-setup`,
+            runtime: lambda.Runtime.NODEJS_20_X,
+            handler: 'handler.handler',
+            memorySize: 512,
+            environment: {
+                SECRETS_PATH: secretsPath,
+                MOMENTO_CACHE_NAME: 'moderator',
+            },
+            code: lambda.Code.fromAsset(
+                path.join('..', 'backend', 'setup-lambda', 'dist', 'setup', 'setup.zip')
+            ),
+        });
+        translationSecrets.grantRead(setupLambda);
+        translationSecrets.grantWrite(setupLambda);
+
+        // This lambda is supposed to return a boolean indicating if the setup is complete.
+        // Was unable to get it to work in order to implement the CloudFormation timeout.
+        // CustomResource ServiceTimeout option is not yet implemented in aws-cdk-lib.
+
+        // const isCompleteLambda = new lambda.Function(this, 'translation-resources-setup-is-complete', {
+        //     functionName: `${restApiName}-api-resources-setup-is-complete`,
+        //     runtime: lambda.Runtime.NODEJS_20_X,
+        //     handler: 'handler.isComplete',
+        //     memorySize: 512,
+        //     environment: {
+        //         SECRETS_PATH: secretsPath,
+        //         MOMENTO_CACHE_NAME: 'moderator',
+        //     },
+        //     code: lambda.Code.fromAsset(
+        //         path.join('..', 'backend', 'setup-lambda', 'dist', 'setup', 'setup.zip')
+        //     ),
+        // });
+        // translationSecrets.grantRead(isCompleteLambda);
+
+        const provider = new cdk.custom_resources.Provider(this, 'translation-resources-provider', {
+            onEventHandler: setupLambda,
+            // totalTimeout: cdk.Duration.minutes(20),
+            // isCompleteHandler: isCompleteLambda,
+        });
+        new cdk.CustomResource(this, 'translations-api-resources-custom-provider', {
+            serviceToken: provider.serviceToken,
+            properties: {
+                apiGatewayUrl: this.restApi.url,
+            },
+        });
     }
 
     private addUnprotectedProxyEndpoint(
