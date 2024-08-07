@@ -14,7 +14,6 @@ import {
   PostUrlWebhookDestination,
   PutWebhook,
   ListWebhooks,
-  ListCaches,
 } from "@gomomento/sdk";
 
 const cacheName = process.env.MOMENTO_CACHE_NAME;
@@ -117,61 +116,3 @@ export const handler = async (
   console.log('Updated signing secret');
   return 200;
 };
-
-// export const isComplete = async () => {
-//   const smClient = new SecretsManagerClient();
-
-//   const getSecretRequest = new GetSecretValueCommand({
-//     SecretId: secretsPath,
-//   });
-//   const getSecretResp = await smClient.send(getSecretRequest);
-//   if (!getSecretResp.SecretString) {
-//     console.log(
-//       `secret: ${secretsPath} is empty. Must be a valid secret value`,
-//     );
-//     return false;
-//   }
-
-//   let parsedSecret = JSON.parse(
-//     getSecretResp.SecretString,
-//   ) as unknown as TranslationSecrets;
-
-//   const cacheClient = new CacheClient({
-//     credentialProvider: CredentialProvider.fromString({
-//       apiKey: parsedSecret.momentoApiKey,
-//     }),
-//     configuration: Configurations.Lambda.latest(),
-//     defaultTtlSeconds: 60 * 60,
-//   });
-
-//   const topicClient = new TopicClient({
-//     configuration: TopicConfigurations.Default.latest(),
-//     credentialProvider: CredentialProvider.fromString({
-//       apiKey: parsedSecret.momentoApiKey,
-//     }),
-//   });
-
-//   const listCachesResponse = await cacheClient.listCaches();
-//   if (listCachesResponse instanceof CreateCache.Error) {
-//     console.log("Failed to list caches", { listCachesResponse });
-//     return false;
-//   }
-
-//   if (!(listCachesResponse as ListCaches.Success).getCaches().find((cache) => cache.getName() === cacheName)) {
-//     console.log(`Cache ${cacheName} does not exist, setup incomplete. Caches: ${(listCachesResponse as ListCaches.Success).getCaches()}`);
-//     return false;
-//   }
-
-//   const listWebhooksResponse = await topicClient.listWebhooks(cacheName);
-//   if (listWebhooksResponse instanceof CreateCache.Error) {
-//     console.log("Failed to list webhooks", { listWebhooksResponse });
-//     return false;
-//   }
-
-//   if (!(listWebhooksResponse as ListWebhooks.Success).getWebhooks().find((webhook) => webhook.id.cacheName === cacheName)) {
-//     console.log("Webhook does not exist, setup incomplete");
-//     return false;
-//   }
-
-//   return true;
-// }
