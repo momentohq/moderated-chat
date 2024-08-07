@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import {Fn, RemovalPolicy, CustomResource} from 'aws-cdk-lib';
+import {Fn, RemovalPolicy} from 'aws-cdk-lib';
 import * as apigw from 'aws-cdk-lib/aws-apigateway';
 import {MethodLoggingLevel} from 'aws-cdk-lib/aws-apigateway';
 import * as path from 'path';
@@ -29,17 +29,15 @@ export class TranslationApiStack extends cdk.Stack {
 
         const restApiName = 'translation';
 
-        // Commented out these logs for now as they required some sort of 
-        // manual configuration in the console I couldn't figure out.
-        // const logGroup = new logs.LogGroup(this, 'AccessLogs', {
-        //     retention: 90, // Keep logs for 90 days
-        //     logGroupName: Fn.sub(
-        //         `${restApiName}-demo-gateway-logs-\${AWS::Region}`
-        //     ),
-        //     removalPolicy: props.isDevDeploy
-        //         ? RemovalPolicy.DESTROY
-        //         : RemovalPolicy.RETAIN,
-        // });
+        const logGroup = new logs.LogGroup(this, 'AccessLogs', {
+            retention: 90, // Keep logs for 90 days
+            logGroupName: Fn.sub(
+                `${restApiName}-demo-gateway-logs-\${AWS::Region}`
+            ),
+            removalPolicy: props.isDevDeploy
+                ? RemovalPolicy.DESTROY
+                : RemovalPolicy.RETAIN,
+        });
 
         // Register the subdomain and create a certificate for it
         const hostedZone = route53.HostedZone.fromLookup(
@@ -60,12 +58,12 @@ export class TranslationApiStack extends cdk.Stack {
             description: "Rest api that contains the backend code/logic for the moderated chat demo",
             deployOptions: {
                 stageName: 'prod',
-                // accessLogDestination: new apigw.LogGroupLogDestination(logGroup),
-                // accessLogFormat: apigw.AccessLogFormat.jsonWithStandardFields(),
+                accessLogDestination: new apigw.LogGroupLogDestination(logGroup),
+                accessLogFormat: apigw.AccessLogFormat.jsonWithStandardFields(),
                 throttlingRateLimit: 10,
                 throttlingBurstLimit: 25,
                 metricsEnabled: true,
-                // loggingLevel: MethodLoggingLevel.INFO,
+                loggingLevel: MethodLoggingLevel.INFO,
                 description: 'translation endpoint for momento console',
             },
             defaultCorsPreflightOptions: {
@@ -77,7 +75,8 @@ export class TranslationApiStack extends cdk.Stack {
                 domainName: `${props.apiSubdomain}.${props.apiDomain}`,
                 endpointType: apigw.EndpointType.REGIONAL,
                 certificate,
-            }
+            },
+            cloudWatchRole: true, // allows api gateway to write logs to cloudwatch
         };
 
         this.restApi = new apigw.RestApi(this, 'rest-api', {
@@ -138,6 +137,8 @@ export class TranslationApiStack extends cdk.Stack {
                 path.join('..', 'backend', 'lambdas', 'dist', 'setup', 'setup.zip')
             ),
         });
+        // Setup lambea needs access to read the momento api key secret and 
+        // update/overwrite the webhook signing secret if a new one is created
         translationSecrets.grantRead(setupLambda);
         translationSecrets.grantWrite(setupLambda);
 
