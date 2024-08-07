@@ -135,7 +135,7 @@ export class TranslationApiStack extends cdk.Stack {
                 MOMENTO_CACHE_NAME: 'moderator',
             },
             code: lambda.Code.fromAsset(
-                path.join('..', 'backend', 'setup-lambda', 'dist', 'setup', 'setup.zip')
+                path.join('..', 'backend', 'lambdas', 'dist', 'setup', 'setup.zip')
             ),
         });
         translationSecrets.grantRead(setupLambda);
@@ -155,7 +155,7 @@ export class TranslationApiStack extends cdk.Stack {
         //         MOMENTO_CACHE_NAME: 'moderator',
         //     },
         //     code: lambda.Code.fromAsset(
-        //         path.join('..', 'backend', 'setup-lambda', 'dist', 'setup', 'setup.zip')
+        //         path.join('..', 'backend', 'lambdas', 'dist', 'setup', 'setup.zip')
         //     ),
         // });
         // translationSecrets.grantRead(isCompleteLambda);

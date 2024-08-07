@@ -1,9 +1,8 @@
-# Lambda Template
+# Moderated Chat Backend Lambdas
 
-This repo contains opinionated boilerplate code for building and bundling multiple lambdas from
+This repo uses opinionated boilerplate code for building and bundling multiple lambdas from
 a single `src` directory, without needing to nest multiple build files. Esbuild is used to
-minify and optimize the lambda bundle to reduce cold starts and optimize runtimes. There are also examples deploying
-these lambdas via `cdk` and `serverless`
+minify and optimize the lambda bundle to reduce cold starts and optimize runtimes. 
 
 ## Folder Structure
 
@@ -11,15 +10,22 @@ these lambdas via `cdk` and `serverless`
 src
 ├── common
 │   └── logger.ts
-├── products
+|   └── routes
+|       └── IRoute.ts
+├── shared
+|   └── models.ts
+├── setup
 |   └── handler.ts
-└── users
-    └── handler.ts
+└── translations-api
+|   └── handler.ts
+|   └── routes/v1
+|       └── translation.ts
 ```
 
-Each directory inside the src directory gets bundled as its own lambda, except the common directory. There are 2 lambda assets, 
-a users.zip and a products.zip. The common directory is an exception which does not get bundled as its own asset. It has 
-code that gets reused across the lambdas.
+Each directory inside the src directory gets bundled as its own lambda, except the common and shared directories. 
+There are 2 lambda assets: a setup.zip and a translations-api.zip. 
+The common and shared directories are an exception; they do not get bundled as their own asset, they have code that gets reused across the translation lambdas.
+The setup lambda is used during cdk deploys of the TranslationApiStack in order to create the Momento cache and webhook necessary for the moderated chat if those resources do not already exist. 
 
 ## Building
 
@@ -29,14 +35,14 @@ To build the lambdas inside this repository, you can just run
 This will create a `dist` directory with the following structure
 ```text
 dist
-├── products
+├── setup
 │   ├── handler.js
 │   ├── handler.js.map
-│   └── products.zip
-└── users
+│   └── setup.zip
+└── translations-api
     ├── handler.js
     ├── handler.js.map
-    └── users.zip
+    └── translations-api.zip
 ```
 
 This `*.zip` files can be uploaded as lambda assets through cdk, serverless, cloud formation... to a
@@ -56,7 +62,4 @@ into its own lambda.
 
 ## Deploying
 
-First run `npm i` to install all required dependencies.
-
-To deploy the example lambdas via `cdk` run `AWS_PROFILE=<profile> npm run cdk-deploy`.
-To deploy via the `serverless` framework run `AWS_PROFILE=<profile> npm run serverless-deploy`.
+Navigate to the infrastructure directory and run the script `./build-and-deploy.sh`
