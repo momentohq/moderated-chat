@@ -10,6 +10,7 @@ import {Effect, PolicyStatement} from "aws-cdk-lib/aws-iam";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as certmgr from "aws-cdk-lib/aws-certificatemanager";
 import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
+import {v4 as uuidv4} from 'uuid';
 
 export interface TranslationApiStackProps {
     isDevDeploy: boolean;
@@ -149,6 +150,7 @@ export class TranslationApiStack extends cdk.Stack {
             serviceToken: provider.serviceToken,
             properties: {
                 apiGatewayUrl: this.restApi.url,
+                triggerUpdateOnCdkDeploy: uuidv4(), // ensures the custom resource is updated and hence invoked with each cdk deploy
             },
         });
     }

@@ -15,6 +15,7 @@ import {
   PutWebhook,
   ListWebhooks,
 } from "@gomomento/sdk";
+import log, { initLogger } from "../common/logger";
 
 const cacheName = process.env.MOMENTO_CACHE_NAME;
 if (!cacheName) {
@@ -34,7 +35,11 @@ export const handler = async (
   event: CdkCustomResourceEvent,
   context: Context,
 ) => {
-  console.log("Beginning lambda execution, resources setup");
+  initLogger({
+    lambdaContext: context,
+    additionalContext: {},
+  });
+  log.info("Beginning lambda execution for resources setup, received uuid:", event.ResourceProperties.triggerUpdateOnCdkDeploy);
 
   const smClient = new SecretsManagerClient();
 
@@ -59,6 +64,7 @@ export const handler = async (
     configuration: Configurations.Lambda.latest(),
     defaultTtlSeconds: 60 * 60,
   });
+  log.info("Created cache client");
 
   const topicClient = new TopicClient({
     configuration: TopicConfigurations.Default.latest(),
@@ -66,29 +72,31 @@ export const handler = async (
       apiKey: parsedSecret.momentoApiKey,
     }),
   });
+  log.info("Created topics client");
 
   // Create a cache if it does not already exist
   const createResponse = await cacheClient.createCache(cacheName);
   if (createResponse instanceof CreateCache.Error) {
-    console.log("Failed to create cache", { createResponse });
+    log.info("Failed to create cache", { createResponse });
     throw new Error("Failed to create cache");
-  } 
+  }
+  log.info("Created cache if it did not already exist"); 
   
   // Check if webhook exists
   const listWebhooksResponse = await topicClient.listWebhooks(cacheName);
   if (listWebhooksResponse instanceof CreateCache.Error) {
-    console.log("Failed to list webhooks", { listWebhooksResponse });
+    log.info("Failed to list webhooks", { listWebhooksResponse });
     throw new Error("Failed to list webhooks");
   }
   const webhooks = (listWebhooksResponse as ListWebhooks.Success).getWebhooks();
 
   if (webhooks.find((webhook) => webhook.id.cacheName === cacheName)) {
-    console.log("Webhook already exists, no need to create new webhook");
+    log.info("Webhook already exists, no need to create new webhook");
     return 200;
   } 
   
   // Create a new webhook to attach to a newly created cache
-  console.log("Webhook does not exist, creating new webhook");
+  log.info("Webhook does not exist, creating new webhook");
   const response = await topicClient.putWebhook(cacheName, "moderator-webhook", {
     topicName: "chat-publish",
     destination: new PostUrlWebhookDestination(event.ResourceProperties.apiGatewayUrl + 'v1/translate'),
@@ -96,9 +104,9 @@ export const handler = async (
   if (response instanceof PutWebhook.Error) {
     throw new Error("Failed to create webhook and update signing secret");
   }
+  log.info("Successfully created webhook");
 
   // Make sure to store signing key as secret
-  console.log("Successfully created webhook");
   const webhookSigningKey = (response as PutWebhook.Success).secretString();
   const updateSecretRequest = new UpdateSecretCommand({
     SecretId: secretsPath,
@@ -113,6 +121,6 @@ export const handler = async (
       `Failed to update webhook signing secret`,
     );
   }
-  console.log('Updated signing secret');
+  log.info('Updated signing secret');
   return 200;
 };
