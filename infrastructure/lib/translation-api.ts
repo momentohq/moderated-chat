@@ -141,29 +141,8 @@ export class TranslationApiStack extends cdk.Stack {
         translationSecrets.grantRead(setupLambda);
         translationSecrets.grantWrite(setupLambda);
 
-        // This lambda is supposed to return a boolean indicating if the setup is complete.
-        // Was unable to get it to work in order to implement the CloudFormation timeout.
-        // CustomResource ServiceTimeout option is not yet implemented in aws-cdk-lib.
-
-        // const isCompleteLambda = new lambda.Function(this, 'translation-resources-setup-is-complete', {
-        //     functionName: `${restApiName}-api-resources-setup-is-complete`,
-        //     runtime: lambda.Runtime.NODEJS_20_X,
-        //     handler: 'handler.isComplete',
-        //     memorySize: 512,
-        //     environment: {
-        //         SECRETS_PATH: secretsPath,
-        //         MOMENTO_CACHE_NAME: 'moderator',
-        //     },
-        //     code: lambda.Code.fromAsset(
-        //         path.join('..', 'backend', 'lambdas', 'dist', 'setup', 'setup.zip')
-        //     ),
-        // });
-        // translationSecrets.grantRead(isCompleteLambda);
-
         const provider = new cdk.custom_resources.Provider(this, 'translation-resources-provider', {
             onEventHandler: setupLambda,
-            // totalTimeout: cdk.Duration.minutes(20),
-            // isCompleteHandler: isCompleteLambda,
         });
         new cdk.CustomResource(this, 'translations-api-resources-custom-provider', {
             serviceToken: provider.serviceToken,
