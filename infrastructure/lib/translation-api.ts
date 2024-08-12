@@ -10,6 +10,7 @@ import {Effect, PolicyStatement} from "aws-cdk-lib/aws-iam";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as certmgr from "aws-cdk-lib/aws-certificatemanager";
 import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
+import {v4 as uuidv4} from 'uuid';
 
 export interface TranslationApiStackProps {
     isDevDeploy: boolean;
@@ -27,8 +28,9 @@ export class TranslationApiStack extends cdk.Stack {
     ) {
         super(scope, id, cdkStackProps);
 
-        const restApiName = 'translation';
-        const logGroup = new logs.LogGroup(this, 'AccessLogs', {
+        const restApiName = 'moderated-chat-translation';
+
+        const logGroup = new logs.LogGroup(this, 'moderated-chat-access-logs', {
             retention: 90, // Keep logs for 90 days
             logGroupName: Fn.sub(
                 `${restApiName}-demo-gateway-logs-\${AWS::Region}`
@@ -37,15 +39,16 @@ export class TranslationApiStack extends cdk.Stack {
                 ? RemovalPolicy.DESTROY
                 : RemovalPolicy.RETAIN,
         });
+
         // Register the subdomain and create a certificate for it
         const hostedZone = route53.HostedZone.fromLookup(
             this,
-            'chat-api-hosted-zone',
+            'moderated-chat-api-hosted-zone',
             {
                 domainName: props.apiDomain,
             }
         );
-        const certificate = new certmgr.Certificate(this, 'chat-api-cert', {
+        const certificate = new certmgr.Certificate(this, 'moderated-chat-api-cert', {
             domainName: `${props.apiSubdomain}.${props.apiDomain}`,
             validation: certmgr.CertificateValidation.fromDns(hostedZone),
         });
@@ -73,14 +76,15 @@ export class TranslationApiStack extends cdk.Stack {
                 domainName: `${props.apiSubdomain}.${props.apiDomain}`,
                 endpointType: apigw.EndpointType.REGIONAL,
                 certificate,
-            }
+            },
+            cloudWatchRole: true, // allows api gateway to write logs to cloudwatch
         };
 
-        this.restApi = new apigw.RestApi(this, 'rest-api', {
+        this.restApi = new apigw.RestApi(this, 'moderated-chat-rest-api', {
             ...defaultRestApiProps,
         });
 
-        new route53.ARecord(this, "rest-api-dns", {
+        new route53.ARecord(this, "moderated-chat-rest-api-dns", {
             zone: hostedZone,
             recordName: props.apiSubdomain,
             comment: "This is the A Record used for the moderated chat api backend",
@@ -90,7 +94,7 @@ export class TranslationApiStack extends cdk.Stack {
         });
 
         const secretsPath = 'moderator/demo/secrets';
-        const v1TranslationApi = new lambda.Function(this, 'translation-lambda-function', {
+        const v1TranslationApi = new lambda.Function(this, 'moderated-chat-translation-lambda-function', {
             functionName: `${restApiName}-api`,
             runtime: lambda.Runtime.NODEJS_20_X,
             handler: 'handler.handler',
@@ -115,8 +119,40 @@ export class TranslationApiStack extends cdk.Stack {
             secretsPath
         );
         translationSecrets.grantRead(v1TranslationApi);
+        translationSecrets.grantWrite(v1TranslationApi);
 
         this.addUnprotectedProxyEndpoint(v1TranslationApi, 'v1');
+
+        // This lambda creates the required cache and webhook if it doesn't already exist.
+        // Runs only when doing a cdk deploy
+        const setupLambda = new lambda.Function(this, 'moderated-chat-setup-lambda-function', {
+            functionName: `${restApiName}-api-resources-setup`,
+            runtime: lambda.Runtime.NODEJS_20_X,
+            handler: 'handler.handler',
+            memorySize: 512,
+            environment: {
+                SECRETS_PATH: secretsPath,
+                MOMENTO_CACHE_NAME: 'moderator',
+            },
+            code: lambda.Code.fromAsset(
+                path.join('..', 'backend', 'lambdas', 'dist', 'setup', 'setup.zip')
+            ),
+        });
+        // Setup lambea needs access to read the momento api key secret and 
+        // update/overwrite the webhook signing secret if a new one is created
+        translationSecrets.grantRead(setupLambda);
+        translationSecrets.grantWrite(setupLambda);
+
+        const provider = new cdk.custom_resources.Provider(this, 'moderated-chat-provider', {
+            onEventHandler: setupLambda,
+        });
+        new cdk.CustomResource(this, 'moderated-chat-custom-provider', {
+            serviceToken: provider.serviceToken,
+            properties: {
+                apiGatewayUrl: this.restApi.url,
+                triggerUpdateOnCdkDeploy: uuidv4(), // ensures the custom resource is updated and hence invoked with each cdk deploy
+            },
+        });
     }
 
     private addUnprotectedProxyEndpoint(
