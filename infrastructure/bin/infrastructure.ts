@@ -45,7 +45,7 @@ async function main() {
 
     new TranslationApiStack(
         app,
-        `translation-api-stack-preprod`,
+        'moderated-chat-translation-api-stack',
         {
             isDevDeploy: Boolean(process.env.IS_DEV_DEPLOY),
             apiDomain,

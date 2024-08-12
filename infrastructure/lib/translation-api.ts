@@ -28,9 +28,9 @@ export class TranslationApiStack extends cdk.Stack {
     ) {
         super(scope, id, cdkStackProps);
 
-        const restApiName = 'translation';
+        const restApiName = 'moderated-chat-translation';
 
-        const logGroup = new logs.LogGroup(this, 'AccessLogs', {
+        const logGroup = new logs.LogGroup(this, 'moderated-chat-access-logs', {
             retention: 90, // Keep logs for 90 days
             logGroupName: Fn.sub(
                 `${restApiName}-demo-gateway-logs-\${AWS::Region}`
@@ -43,12 +43,12 @@ export class TranslationApiStack extends cdk.Stack {
         // Register the subdomain and create a certificate for it
         const hostedZone = route53.HostedZone.fromLookup(
             this,
-            'chat-api-hosted-zone',
+            'moderated-chat-api-hosted-zone',
             {
                 domainName: props.apiDomain,
             }
         );
-        const certificate = new certmgr.Certificate(this, 'chat-api-cert', {
+        const certificate = new certmgr.Certificate(this, 'moderated-chat-api-cert', {
             domainName: `${props.apiSubdomain}.${props.apiDomain}`,
             validation: certmgr.CertificateValidation.fromDns(hostedZone),
         });
@@ -80,11 +80,11 @@ export class TranslationApiStack extends cdk.Stack {
             cloudWatchRole: true, // allows api gateway to write logs to cloudwatch
         };
 
-        this.restApi = new apigw.RestApi(this, 'rest-api', {
+        this.restApi = new apigw.RestApi(this, 'moderated-chat-rest-api', {
             ...defaultRestApiProps,
         });
 
-        new route53.ARecord(this, "rest-api-dns", {
+        new route53.ARecord(this, "moderated-chat-rest-api-dns", {
             zone: hostedZone,
             recordName: props.apiSubdomain,
             comment: "This is the A Record used for the moderated chat api backend",
@@ -94,7 +94,7 @@ export class TranslationApiStack extends cdk.Stack {
         });
 
         const secretsPath = 'moderator/demo/secrets';
-        const v1TranslationApi = new lambda.Function(this, 'translation-lambda-function', {
+        const v1TranslationApi = new lambda.Function(this, 'moderated-chat-translation-lambda-function', {
             functionName: `${restApiName}-api`,
             runtime: lambda.Runtime.NODEJS_20_X,
             handler: 'handler.handler',
@@ -125,7 +125,7 @@ export class TranslationApiStack extends cdk.Stack {
 
         // This lambda creates the required cache and webhook if it doesn't already exist.
         // Runs only when doing a cdk deploy
-        const setupLambda = new lambda.Function(this, 'translation-resources-setup', {
+        const setupLambda = new lambda.Function(this, 'moderated-chat-setup-lambda-function', {
             functionName: `${restApiName}-api-resources-setup`,
             runtime: lambda.Runtime.NODEJS_20_X,
             handler: 'handler.handler',
@@ -143,10 +143,10 @@ export class TranslationApiStack extends cdk.Stack {
         translationSecrets.grantRead(setupLambda);
         translationSecrets.grantWrite(setupLambda);
 
-        const provider = new cdk.custom_resources.Provider(this, 'translation-resources-provider', {
+        const provider = new cdk.custom_resources.Provider(this, 'moderated-chat-provider', {
             onEventHandler: setupLambda,
         });
-        new cdk.CustomResource(this, 'translations-api-resources-custom-provider', {
+        new cdk.CustomResource(this, 'moderated-chat-custom-provider', {
             serviceToken: provider.serviceToken,
             properties: {
                 apiGatewayUrl: this.restApi.url,
