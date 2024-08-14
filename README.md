@@ -50,7 +50,7 @@ Contains apis for the moderated chat application. There are a few apis that we a
 `GET /v1/translate/supportedLanguages` - returns the languages that the application currently supports
 `GET /v1/translate/token/<username>` - returns a short lived token that allows <username> to publish to the `chat-publish` topic
 
-In order to run these apis, there needs to be a secret stored in aws secrets manager with the path `moderator/demo/secrets`. This secret should be key value pairs in the format
+In order to run these apis, there needs to be a secret stored in aws secrets manager with the path `moderated-chat/demo/secrets`. This secret should be key value pairs in the format
 
 ```
 {

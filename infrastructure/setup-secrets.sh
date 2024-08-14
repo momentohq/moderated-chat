@@ -68,4 +68,4 @@ fi
 # Make sure user has aws cli installed before continuing
 doesCommandExist "aws"
 
-createOrUpdateSecret "moderator/demo/secrets" "{\"momentoApiKey\":\"${MOMENTO_API_KEY}\", \"momentoSigningSecret\":\"placeholder-will-be-replaced-during-cdk-setup\"}"
+createOrUpdateSecret "moderated-chat/demo/secrets" "{\"momentoApiKey\":\"${MOMENTO_API_KEY}\", \"momentoSigningSecret\":\"placeholder-will-be-replaced-during-cdk-deploy\"}" "Momento API key and webhook signing secrets used for the multi-langauge moderated chat demo"
