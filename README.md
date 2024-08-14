@@ -50,7 +50,9 @@ Contains apis for the moderated chat application. There are a few apis that we a
 `GET /v1/translate/supportedLanguages` - returns the languages that the application currently supports
 `GET /v1/translate/token/<username>` - returns a short lived token that allows <username> to publish to the `chat-publish` topic
 
-In order to run these apis, there needs to be a secret stored in aws secrets manager with the path `moderated-chat/demo/secrets`. This secret should be key value pairs in the format
+In order to run these apis, there needs to be a secret stored in aws secrets manager with the path `moderated-chat/demo/secrets`. You can use the [setup-secrets.sh script](./infrastructure/setup-secrets.sh) to deploy this secret to your AWS account.
+
+This secret should be key value pairs in the format
 
 ```
 {
@@ -58,8 +60,8 @@ In order to run these apis, there needs to be a secret stored in aws secrets man
   webhookSigningSecret: "",
 }
 ```
-- the `momentoApiKey` is a token, which can be created via the [Momento Console](https://console.gomomento.com/api-keys), with super user permissions. This token will be used to vend short lived publish/subscribe api keys to the frontend
-- the `webhookSigningSecret` is the signing secret associated with the Momento Webhook. It is used to validate that requests are coming from Momento
+- the `momentoApiKey` is your Momento API key with superuser permissions. This can be created via the [Momento Console](https://console.gomomento.com/api-keys). This api key will be used to vend short lived publish/subscribe api keys to the frontend.
+- the `webhookSigningSecret` is the signing secret associated with the Momento Webhook. It is used to validate that requests are coming from Momento. This secret is updated by the custom resource lambda function when you deploy the backend infrastructure CDK stack.
 
 
 ## Frontend
