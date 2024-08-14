@@ -93,7 +93,7 @@ export class TranslationApiStack extends cdk.Stack {
             ),
         });
 
-        const secretsPath = 'moderator/demo/secrets';
+        const secretsPath = 'moderated-chat/demo/secrets';
         const v1TranslationApi = new lambda.Function(this, 'moderated-chat-translation-lambda-function', {
             functionName: `${restApiName}-api`,
             runtime: lambda.Runtime.NODEJS_20_X,
