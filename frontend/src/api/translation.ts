@@ -2,9 +2,8 @@ import { type LanguageOption } from "../ChatApp";
 import { type ChatMessageEvent, type User } from "../shared/models";
 
 class TranslationApi {
-  // TODO: update API DOMAIN when moving to prod
-  private readonly baseUrl =
-    "https://chat-api.developer-mst-dev.preprod.a.momentohq.com";
+  private readonly baseUrl = import.meta.env.VITE_API_BASE_URL;
+
   async createToken(
     user: User,
   ): Promise<{ token: string; expiresAtEpoch: number }> {
@@ -35,7 +34,9 @@ class TranslationApi {
   async getSupportedLanguages(): Promise<{
     supportedLanguages: LanguageOption[];
   }> {
+    console.log("baseUrl:", this.baseUrl);
     const url = `${this.baseUrl}/v1/translate/languages`;
+    console.log("url:", url);
     const response = await fetch(url, {
       method: "GET",
       headers: {
