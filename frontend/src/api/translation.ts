@@ -34,9 +34,7 @@ class TranslationApi {
   async getSupportedLanguages(): Promise<{
     supportedLanguages: LanguageOption[];
   }> {
-    console.log("baseUrl:", this.baseUrl);
     const url = `${this.baseUrl}/v1/translate/languages`;
-    console.log("url:", url);
     const response = await fetch(url, {
       method: "GET",
       headers: {
