@@ -12,7 +12,6 @@ rm -f cdk.context.json
 npm i
 npm run build
 
-# TODO: update API DOMAIN when moving to prod
-export API_DOMAIN=${API_DOMAIN:-developer-mst-dev.preprod.a.momentohq.com}
+export API_DOMAIN=${API_DOMAIN:-your-chosen-domain-name.com}
 
 AWS_PROFILE=dev AWS_REGION=us-west-2 npx cdk deploy --require-approval never
