@@ -1,6 +1,23 @@
-# Moderated Chat using iOS Client
+# iOS Moderated Chat App
 
-## Running the example using the Xcode simulator
+This directory contains an iOS client of the Moderated Chat demo.
 
-1. Open the `ios/moderated_chat` directory as an Xcode project.
-3. Click Run (in the Product menu). 
+## Prerequisites
+
+- [Xcode](https://developer.apple.com/xcode/)
+
+## Running the demo
+
+Create an environment variable to specify the base URL for your API endpoints.
+
+```bash
+VITE_API_BASE_URL="https://chat-api.your-chosen-domain-name.com"
+```
+
+You may also need to specify a variable to enable logging output:
+
+```bash
+IDEPreferLogStreaming=YES
+```
+
+To run the app using a simulator, simply open the `ios/moderated_chat` directory as an Xcode project and click "Run". 

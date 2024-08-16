@@ -5,7 +5,7 @@ import Alamofire
 @MainActor
 class TranslationApi: ObservableObject {
     static let shared = TranslationApi()
-    private let baseUrl = "https://57zovcekn0.execute-api.us-west-2.amazonaws.com/prod";
+    private let baseUrl: String = ProcessInfo.processInfo.environment["API_BASE_URL"]!
     @Published var selectedLanguageCode: String = "en"
     @Published var supportedLanguages: [Language] = []
     @Published var currentUsername: String = ""
@@ -17,6 +17,7 @@ class TranslationApi: ObservableObject {
     }
     
     func createToken() async -> MomentoToken {
+        
         do {
             let user = getUser()
             currentUsername = user.username
