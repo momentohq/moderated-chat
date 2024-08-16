@@ -1,0 +1,21 @@
+name: on-pull-request
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v3
+
+      - name: Verify README generation
+        uses: momentohq/standards-and-practices/github-actions/oss-readme-template@gh-actions-v2
+        with:
+          project_status: official
+          project_stability: stable
+          project_type: other
+          template_file: ./README.template.md
+          output_file: .README.md
