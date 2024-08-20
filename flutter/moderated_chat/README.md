@@ -13,19 +13,21 @@ A Flutter version of the Momento Moderated Chat demo. It currently only has a ma
 
 ## Running the Demo
 
-In the [lib/config.dart file](./lib/config.dart), specify the base URL for your API endpoints.
+1. In the [lib/config.dart file](./lib/config.dart), specify the base URL for your API endpoints.
 
-```dart
-class Config {
-  static const baseUrl = "https://chat-api.your-chosen-domain-name.com";
-}
-```
+    ```dart
+    class Config {
+      static const baseUrl = "https://your-api-endpoint.com";
+    }
+    ```
 
-From the flutter moderated_chat directory, call `flutter run` to start the app:
+2. From the flutter moderated_chat directory, call `flutter run` to start the app:
 
-```bash
-cd flutter/moderated_chat
-flutter run -d macos
-```
+    ```bash
+    cd flutter/moderated_chat
+    flutter run -d macos
+    ```
 
-Alternatively, you can open the project in VSCode or IntelliJ with the Flutter plugin and run the app from there.
+    Alternatively, you can open the project in VSCode or IntelliJ with the Flutter plugin and run the app from there.
+
+Note: see [here](https://github.com/jonataslaw/get_cli/issues/263) if you are using Dart 3.5.0 and get an error about UnmodifiableUint8ListView.

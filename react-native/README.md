@@ -6,20 +6,20 @@
 
 ## Running the example using Expo Go
 
-Create a `.env` file in the the `react-native/ModeratedChat` directory to specify the base URL for your API endpoints.
+1. Create a `.env` file in the the `react-native/ModeratedChat` directory to specify the base URL for your API endpoints.
 
-```bash
-API_BASE_URL="https://chat-api.your-chosen-domain-name.com"
-```
+    ```bash
+    API_BASE_URL="https://your-api-endpoint.com"
+    ```
 
-Then in the `react-native/ModeratedChat` directory:
+2. Then in the `react-native/ModeratedChat` directory:
 
-- run `npm install`
-- run `npx expo start`
-- run the app on your phone:
-  - scan QR Code with your phone to open it in the Expo Go app
-- or run the app on an emulator:
-  - launch one of the device emulators as described in the instructions displayed after you start the Expo server
+    - run `npm install`
+    - run `npx expo start`
+    - run the app on your phone:
+      - scan QR Code with your phone to open it in the Expo Go app
+    - or run the app on an emulator:
+      - launch one of the device emulators as described in the instructions displayed after you start the Expo server
 
 ## Polyfills
 

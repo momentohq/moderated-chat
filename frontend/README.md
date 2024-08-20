@@ -11,7 +11,7 @@ This directory contains a React + TypeScript + Vite web app version of the Moder
 Create a `.env` file to specify the base URL for your API endpoints.
 
 ```bash
-VITE_API_BASE_URL="https://chat-api.your-chosen-domain-name.com"
+VITE_API_BASE_URL="https://your-api-endpoint.com"
 ```
 
 Then run the web app:

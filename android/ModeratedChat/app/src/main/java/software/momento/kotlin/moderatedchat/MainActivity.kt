@@ -97,7 +97,7 @@ import kotlin.collections.HashMap
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
 
-const val baseApiUrl = "https://chat-api.your-chosen-domain-name.com"
+const val baseApiUrl = "https://your-api-endpoint.com"
 var momentoApiToken: String = ""
 var tokenExpiresAt: Long = 0
 var topicClient: TopicClient? = null

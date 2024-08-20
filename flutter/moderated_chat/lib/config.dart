@@ -1,3 +1,3 @@
 class Config {
-  static const baseUrl = "https://chat-api.your-chosen-domain-name.com";
+  static const baseUrl = "https://your-api-endpoint.com";
 }

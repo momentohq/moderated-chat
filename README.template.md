@@ -65,13 +65,33 @@ Or you can manually run each of these steps:
     npm run build
     ```
 
-3. Specify environment variables and deploy.
+3. Specify the API_DOMAIN environment variable.
 
     ```bash
+    # The default is to use the API gateway URL that is provided when you deploy the backend stack.
+    export API_DOMAIN="default"
+
+    # Specifying your own domain name will direct your CDK stack to find an existing AWS Route53 
+    # hosted zone in your account and create a 'chat-api' subdomain for it.
     export API_DOMAIN=${API_DOMAIN:-your-chosen-domain-name.com}
+    ```
+
+4. Deploy your backend stack.
+
+    ```bash
     AWS_PROFILE=<my profile> AWS_REGION=<my region> npx cdk deploy
     ```
 
 Once deployed, you can test your application using any of the client applications.
+
+If you used the `API_DOMAIN="default"` option, you'll want to save the API gateway URL that was printed out.
+This will be the base API URL you'll provide to the client applications.
+
+```bash
+Outputs:
+moderated-chat-translation-api-stack.moderatedchatrestapiEndpoint23439914 = https://something.something.something.amazonaws.com/prod/
+```
+
+If you used your own API domain name, you'll provide something like `https://chat-api.your-domain-name.com` to the client applications.
 
 {{ ossFooter }}
