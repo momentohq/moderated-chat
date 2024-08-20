@@ -31,7 +31,7 @@ Or you can manually run each of these steps:
 1. Build the Lambda function code.
 
     ```bash
-    cd backend
+    cd backend/lambdas
     npm install
     npm run build
     ```
