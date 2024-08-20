@@ -9,7 +9,7 @@
 Create a `.env` file in the the `react-native/ModeratedChat` directory to specify the base URL for your API endpoints.
 
 ```bash
-VITE_API_BASE_URL="https://chat-api.your-chosen-domain-name.com"
+API_BASE_URL="https://chat-api.your-chosen-domain-name.com"
 ```
 
 Then in the `react-native/ModeratedChat` directory:

@@ -11,7 +11,7 @@ This directory contains an iOS client of the Moderated Chat demo.
 Create an environment variable to specify the base URL for your API endpoints.
 
 ```bash
-VITE_API_BASE_URL="https://chat-api.your-chosen-domain-name.com"
+API_BASE_URL="https://chat-api.your-chosen-domain-name.com"
 ```
 
 You may also need to specify a variable to enable logging output:
