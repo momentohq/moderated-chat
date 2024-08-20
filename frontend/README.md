@@ -23,4 +23,4 @@ npm run dev
 
 ## Deploying to Vercel
 
-For Vercel deployments of the moderated chat app, you must also ensure the `VITE_API_BASE_URL` environment variable exists. You can create this using the Vercel console on the project's Settings > Environment Variables page.
+For [Vercel](https://vercel.com) deployments of the moderated chat app, you must also ensure the `VITE_API_BASE_URL` environment variable exists. You can create this using the Vercel console on the project's Settings > Environment Variables page.
