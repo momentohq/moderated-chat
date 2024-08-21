@@ -40,6 +40,29 @@ export class TranslationApiStack extends cdk.Stack {
                 : RemovalPolicy.RETAIN,
         });
 
+        const defaultRestApiProps: apigw.RestApiProps = {
+            restApiName,
+            endpointTypes: [apigw.EndpointType.REGIONAL],
+            deploy: true,
+            description: "Rest api that contains the backend code/logic for the moderated chat demo",
+            deployOptions: {
+                stageName: 'prod',
+                accessLogDestination: new apigw.LogGroupLogDestination(logGroup),
+                accessLogFormat: apigw.AccessLogFormat.jsonWithStandardFields(),
+                throttlingRateLimit: 10,
+                throttlingBurstLimit: 25,
+                metricsEnabled: true,
+                loggingLevel: MethodLoggingLevel.INFO,
+                description: 'translation endpoint for momento console',
+            },
+            defaultCorsPreflightOptions: {
+                allowOrigins: apigw.Cors.ALL_ORIGINS,
+                allowHeaders: apigw.Cors.DEFAULT_HEADERS,
+                allowMethods: apigw.Cors.ALL_METHODS,
+            },
+            cloudWatchRole: true, // allows api gateway to write logs to cloudwatch
+        };
+
         // Register the subdomain and create a certificate for it if using a custom domain
         if (props.apiDomain !== "default") {
             const hostedZone = route53.HostedZone.fromLookup(
@@ -53,36 +76,18 @@ export class TranslationApiStack extends cdk.Stack {
                 domainName: `${props.apiSubdomain}.${props.apiDomain}`,
                 validation: certmgr.CertificateValidation.fromDns(hostedZone),
             });
-            const defaultRestApiProps: apigw.RestApiProps = {
-                restApiName,
-                endpointTypes: [apigw.EndpointType.REGIONAL],
-                deploy: true,
-                description: "Rest api that contains the backend code/logic for the moderated chat demo",
-                deployOptions: {
-                    stageName: 'prod',
-                    accessLogDestination: new apigw.LogGroupLogDestination(logGroup),
-                    accessLogFormat: apigw.AccessLogFormat.jsonWithStandardFields(),
-                    throttlingRateLimit: 10,
-                    throttlingBurstLimit: 25,
-                    metricsEnabled: true,
-                    loggingLevel: MethodLoggingLevel.INFO,
-                    description: 'translation endpoint for momento console',
-                },
-                defaultCorsPreflightOptions: {
-                    allowOrigins: apigw.Cors.ALL_ORIGINS,
-                    allowHeaders: apigw.Cors.DEFAULT_HEADERS,
-                    allowMethods: apigw.Cors.ALL_METHODS,
-                },
+
+            const updatedRestApiProps: apigw.RestApiProps = {
+                ...defaultRestApiProps,
                 domainName: {
                     domainName: `${props.apiSubdomain}.${props.apiDomain}`,
                     endpointType: apigw.EndpointType.REGIONAL,
                     certificate,
                 },
-                cloudWatchRole: true, // allows api gateway to write logs to cloudwatch
             };
-    
+            
             this.restApi = new apigw.RestApi(this, 'moderated-chat-rest-api', {
-                ...defaultRestApiProps,
+                ...updatedRestApiProps,
             });
     
             new route53.ARecord(this, "moderated-chat-rest-api-dns", {
@@ -94,28 +99,6 @@ export class TranslationApiStack extends cdk.Stack {
                 ),
             });
         } else {
-            const defaultRestApiProps: apigw.RestApiProps = {
-                restApiName,
-                endpointTypes: [apigw.EndpointType.REGIONAL],
-                deploy: true,
-                description: "Rest api that contains the backend code/logic for the moderated chat demo",
-                deployOptions: {
-                    stageName: 'prod',
-                    accessLogDestination: new apigw.LogGroupLogDestination(logGroup),
-                    accessLogFormat: apigw.AccessLogFormat.jsonWithStandardFields(),
-                    throttlingRateLimit: 10,
-                    throttlingBurstLimit: 25,
-                    metricsEnabled: true,
-                    loggingLevel: MethodLoggingLevel.INFO,
-                    description: 'translation endpoint for momento console',
-                },
-                defaultCorsPreflightOptions: {
-                    allowOrigins: apigw.Cors.ALL_ORIGINS,
-                    allowHeaders: apigw.Cors.DEFAULT_HEADERS,
-                    allowMethods: apigw.Cors.ALL_METHODS,
-                },
-                cloudWatchRole: true, // allows api gateway to write logs to cloudwatch
-            };
             this.restApi = new apigw.RestApi(this, 'moderated-chat-rest-api', {
                 ...defaultRestApiProps,
             });
