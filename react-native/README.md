@@ -1,20 +1,25 @@
-# Moderated Chat Using React Native Client
+# React Native Moderated Chat App
 
-## Getting Started
+## Prerequisites
 
-This project uses [Expo Go](https://docs.expo.dev/get-started/expo-go/), a free open-source sandbox that makes it quick and easy to experiment with React Native on Android and iOS devices. You will need the [expo application](https://expo.dev/client) installed on your phone, or you can also use device emulators for [Android](https://docs.expo.dev/workflow/android-studio-emulator/) and [iOS](https://docs.expo.dev/workflow/ios-simulator/).
-
+- [Expo Go](https://docs.expo.dev/get-started/expo-go/), a free open-source sandbox that makes it quick and easy to experiment with React Native on Android and iOS devices. You will need the [expo application](https://expo.dev/client) installed on your phone, or you can also use device emulators for [Android](https://docs.expo.dev/workflow/android-studio-emulator/) and [iOS](https://docs.expo.dev/workflow/ios-simulator/).
 
 ## Running the example using Expo Go
 
-In the `react-native/ModeratedChat` directory:
+1. Create a `.env` file in the the `react-native/ModeratedChat` directory to specify the base URL for your API endpoints.
 
-- run `npm install`
-- run `npx expo start`
-- run the app on your phone:
-  - scan QR Code with your phone to open it in the Expo Go app
-- or run the app on an emulator:
-  - launch one of the device emulators as described in the instructions displayed after you start the Expo server
+    ```bash
+    API_BASE_URL="https://your-api-endpoint.com"
+    ```
+
+2. Then in the `react-native/ModeratedChat` directory:
+
+    - run `npm install`
+    - run `npx expo start`
+    - run the app on your phone:
+      - scan QR Code with your phone to open it in the Expo Go app
+    - or run the app on an emulator:
+      - launch one of the device emulators as described in the instructions displayed after you start the Expo server
 
 ## Polyfills
 

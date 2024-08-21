@@ -97,7 +97,7 @@ import kotlin.collections.HashMap
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
 
-const val baseApiUrl = "https://57zovcekn0.execute-api.us-west-2.amazonaws.com/prod"
+const val baseApiUrl = "https://your-api-endpoint.com"
 var momentoApiToken: String = ""
 var tokenExpiresAt: Long = 0
 var topicClient: TopicClient? = null

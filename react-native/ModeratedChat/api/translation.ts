@@ -2,8 +2,7 @@ import { type LanguageOption } from "../ChatApp";
 import { type ChatMessageEvent, type User } from "../shared/models";
 
 class TranslationApi {
-  private readonly baseUrl =
-    "https://chat-api.developer-mst-dev.preprod.a.momentohq.com";
+  private readonly baseUrl = process.env.API_BASE_URL;
   async createToken(
     user: User,
   ): Promise<{ token: string; expiresAtEpoch: number }> {
