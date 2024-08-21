@@ -18,4 +18,4 @@ jobs:
           project_stability: stable
           project_type: other
           template_file: ./README.template.md
-          output_file: .README.md
+          output_file: ./README.md
