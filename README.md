@@ -1,81 +1,27 @@
-# Moderated Chat
+<img src="https://docs.momentohq.com/img/momento-logo-forest.svg" alt="logo" width="400"/>
 
-This application uses Momento Webhooks to build a moderated, multi-language chat application. Users can chat with each other in multiple languages at the same time, using a variety of client applications, with profanity filtered out. This repository is structured as a mono repo, with our main frontend, backend, and infrastructure code separated by folders. The folder structure is as follows
+[![project status](https://momentohq.github.io/standards-and-practices/badges/project-status-official.svg)](https://github.com/momentohq/standards-and-practices/blob/main/docs/momento-on-github.md)
+[![project stability](https://momentohq.github.io/standards-and-practices/badges/project-stability-stable.svg)](https://github.com/momentohq/standards-and-practices/blob/main/docs/momento-on-github.md)
 
-```
-├── backend
-│   ├── LICENSE
-│   ├── README.md
-│   ├── esbuild.ts
-│   ├── package-lock.json
-│   ├── package.json
-│   ├── postbuild.ts
-│   ├── serverless.yaml
-│   ├── src
-│   └── tsconfig.json
-├── frontend
-│   ├── README.md
-│   ├── index.html
-│   ├── package.json
-│   ├── public
-│   ├── src
-│   ├── tsconfig.json
-│   ├── tsconfig.node.json
-│   └── vite.config.ts
-└── infrastructure
-    ├── README.md
-    ├── bin
-    ├── cdk.json
-    ├── jest.config.js
-    ├── lib
-    ├── package-lock.json
-    ├── package.json
-    ├── test
-    └── tsconfig.json
-```
 
-Additional client applications of the moderated chat app can be found in the following locations:
+## Multi-language Moderated Chat Demo
 
+This application uses Momento Webhooks to build a moderated, multi-language chat application. Users across a variety of client applications can chat with each other in multiple languages at the same time with profanity filtered out in real time. 
+
+You can try the chat app using our deployed [web app here](https://moderated-chat.vercel.app/).
+
+You can find the web app implementation, as well as additional client applications, of the moderated chat app in the following locations:
+
+- [Web (React + Vite)](./frontend/)
 - [iOS](./ios/)
 - [Android](./android/)
 - [Flutter](./flutter/)
+- [React Native](./react-native/)
 - [Unity](https://github.com/momentohq/momento-unity-demo)
 
-## Backend
+## Developing
 
-Contains apis for the moderated chat application. There are a few apis that we are using
+If you are interested in deploying your own version of a moderated chat app, you will need to deploy your own version of the backend infrastructure which uses Momento and AWS services. Please see the [infrastructure directory](./infrastructure/) for the overview and setup instructions.
 
-`POST /v1/translate` - webhook listener for momento topic events
-`GET /v1/translate/latestMessages/<lang>` - returns the last 100 messages from the chat in the requested language
-`GET /v1/translate/supportedLanguages` - returns the languages that the application currently supports
-`GET /v1/translate/token/<username>` - returns a short lived token that allows <username> to publish to the `chat-publish` topic
-
-In order to run these apis, there needs to be a secret stored in aws secrets manager with the path `moderated-chat/demo/secrets`. You can use the [setup-secrets.sh script](./infrastructure/setup-secrets.sh) to deploy this secret to your AWS account.
-
-This secret should be key value pairs in the format
-
-```
-{
-  momentoApiKey: "",
-  webhookSigningSecret: "",
-}
-```
-- the `momentoApiKey` is your Momento API key with superuser permissions. This can be created via the [Momento Console](https://console.gomomento.com/api-keys). This api key will be used to vend short lived publish/subscribe api keys to the frontend.
-- the `webhookSigningSecret` is the signing secret associated with the Momento Webhook. It is used to validate that requests are coming from Momento. This secret is updated by the custom resource lambda function when you deploy the backend infrastructure CDK stack.
-
-
-## Frontend
-
-Contains the web browser frontend code for our chat application. To run
-
-1. `npm install`
-2. `npm run dev`
-3. open `localhost:5173` in a browser
-
-## Infrastructure
-
-This application uses [cdk](https://github.com/aws/aws-cdk) to deploy the infrastructure to aws. To deploy
-
-1. `npm install`
-2. `npm run build`
-3. `AWS_PROFILE=<my profile> AWS_REGION=<my region> npx cdk deploy`
+----------------------------------------------------------------------------------------
+For more info, visit our website at [https://gomomento.com](https://gomomento.com)!
