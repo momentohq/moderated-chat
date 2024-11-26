@@ -1,4 +1,5 @@
 {
+  "originHash" : "2157297f3ba668b87b8ebc4cb6a19d97aedf6ac74c06b30b189552fe127daad5",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -14,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/momentohq/client-sdk-swift",
       "state" : {
-        "revision" : "7d1f7b377921e1867d074c654a7b6ba0d91eea48",
-        "version" : "0.5.0"
+        "revision" : "71048be91984c5117f02045aa8ee011638cb1493",
+        "version" : "0.7.1"
       }
     },
     {
@@ -136,5 +137,5 @@
       }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
