@@ -97,7 +97,7 @@ import kotlin.collections.HashMap
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.seconds
 
-const val baseApiUrl = "https://your-api-endpoint.com"
+const val baseApiUrl = "https://oljvzwr8zb.execute-api.us-west-2.amazonaws.com/prod/"
 var momentoApiToken: String = ""
 var tokenExpiresAt: Long = 0
 var topicClient: TopicClient? = null
@@ -247,6 +247,7 @@ fun ModeratedChatLayout(
                     supportedLanguages = it
                 },
                 onLanguageLoadError = {
+                    println("unable to load languages")
                     loadError = true
                 },
                 language = currentLanguage,
@@ -258,6 +259,7 @@ fun ModeratedChatLayout(
                             coroutineScope {
                                 launch {
                                     try {
+                                        println("token expires at $tokenExpiresAt")
                                         val tokenExpiresInSecs =
                                             tokenExpiresAt - (System.currentTimeMillis() / 1000)
                                         println("token expires in $tokenExpiresInSecs")
@@ -265,6 +267,7 @@ fun ModeratedChatLayout(
                                             getClients(userName, userId)
                                         }
                                     } catch (e: Exception) {
+                                        println("error refreshing token")
                                         loadError = true
                                     }
                                 }
@@ -284,6 +287,7 @@ fun ModeratedChatLayout(
                                     }
                                 }
                             } catch (e: Exception) {
+                                println("could not load messages for language")
                                 loadError = true
                             }
                             messagesLoaded = true
@@ -303,6 +307,7 @@ fun ModeratedChatLayout(
                                         // TODO: getting a RuntimeException about grpc channel not
                                         //  being closed correctly.
                                     } catch (e: Exception) {
+                                        println("error subscribing or receiving messages?")
                                         loadError = true
                                     }
 
@@ -761,6 +766,7 @@ private fun getApiToken(username: String, id: UUID) {
             val jsonObject = JSONObject(response.toString())
             momentoApiToken = jsonObject.getString("token")
             tokenExpiresAt = jsonObject.getLong("expiresAtEpoch")
+            println("Received new token that expires at epoch $tokenExpiresAt")
         }
     }
 }
