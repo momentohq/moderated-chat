@@ -24,3 +24,5 @@ Note: You may also need to specify a variable to enable logging output in order 
 ```bash
 IDEPreferLogStreaming=YES
 ```
+
+Note: if you run into an error saying "principal class is nil because all fallbacks have failed", you can try turning off API validation in the settings as mentioned in this [github issue comment](https://github.com/flutter/flutter/issues/150227#issuecomment-2423291527).

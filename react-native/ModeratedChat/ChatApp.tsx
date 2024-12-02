@@ -105,7 +105,7 @@ const ChatApp = (props: ChatProps) => {
           sourceLanguage: selectedLanguage,
         });
       }
-      setChats((curr) => [...curr, message]);
+      fetchLatestChats();
     } catch (e) {
       console.error("unable to parse chat message", e);
     }

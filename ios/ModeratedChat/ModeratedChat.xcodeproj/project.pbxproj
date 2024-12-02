@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		083856442CF673C10090B718 /* Momento in Frameworks */ = {isa = PBXBuildFile; productRef = 083856432CF673C10090B718 /* Momento */; };
 		083F34212B743B6A00489C8D /* Profanity Filter in Frameworks */ = {isa = PBXBuildFile; productRef = 083F34202B743B6A00489C8D /* Profanity Filter */; };
 		08ABEF462B62F31A00A31A34 /* MessageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08ABEF452B62F31A00A31A34 /* MessageStore.swift */; };
 		08B3F11E2B572889003D2CB3 /* ModeratedChatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F11D2B572889003D2CB3 /* ModeratedChatApp.swift */; };
@@ -17,7 +18,6 @@
 		08B3F12E2B57593A003D2CB3 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F12D2B57593A003D2CB3 /* ChatView.swift */; };
 		08B3F1302B575A3E003D2CB3 /* HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F12F2B575A3E003D2CB3 /* HeaderView.swift */; };
 		08B3F1322B58418D003D2CB3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F1312B58418D003D2CB3 /* Models.swift */; };
-		08B3F1352B5890ED003D2CB3 /* Momento in Frameworks */ = {isa = PBXBuildFile; productRef = 08B3F1342B5890ED003D2CB3 /* Momento */; };
 		08B3F1392B59AAE0003D2CB3 /* Users.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B3F1382B59AAE0003D2CB3 /* Users.swift */; };
 		08B3F13C2B59B1DA003D2CB3 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 08B3F13B2B59B1DA003D2CB3 /* Alamofire */; };
 		08ED530F2B63001E008432E1 /* MomentoClients.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08ED530E2B63001E008432E1 /* MomentoClients.swift */; };
@@ -45,7 +45,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				08B3F1352B5890ED003D2CB3 /* Momento in Frameworks */,
+				083856442CF673C10090B718 /* Momento in Frameworks */,
 				083F34212B743B6A00489C8D /* Profanity Filter in Frameworks */,
 				08B3F13C2B59B1DA003D2CB3 /* Alamofire in Frameworks */,
 			);
@@ -114,9 +114,9 @@
 			);
 			name = ModeratedChat;
 			packageProductDependencies = (
-				08B3F1342B5890ED003D2CB3 /* Momento */,
 				08B3F13B2B59B1DA003D2CB3 /* Alamofire */,
 				083F34202B743B6A00489C8D /* Profanity Filter */,
+				083856432CF673C10090B718 /* Momento */,
 			);
 			productName = ModeratedChat;
 			productReference = 08B3F11A2B572889003D2CB3 /* ModeratedChat.app */;
@@ -147,9 +147,9 @@
 			);
 			mainGroup = 08B3F1112B572889003D2CB3;
 			packageReferences = (
-				08B3F1332B5890ED003D2CB3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 				08B3F13A2B59B1DA003D2CB3 /* XCRemoteSwiftPackageReference "Alamofire" */,
 				083F341F2B743B6A00489C8D /* XCRemoteSwiftPackageReference "profanitiy-filter-swift" */,
+				083856422CF673C10090B718 /* XCRemoteSwiftPackageReference "client-sdk-swift" */,
 			);
 			productRefGroup = 08B3F11B2B572889003D2CB3 /* Products */;
 			projectDirPath = "";
@@ -398,20 +398,20 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		083856422CF673C10090B718 /* XCRemoteSwiftPackageReference "client-sdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/momentohq/client-sdk-swift";
+			requirement = {
+				kind = exactVersion;
+				version = 0.7.1;
+			};
+		};
 		083F341F2B743B6A00489C8D /* XCRemoteSwiftPackageReference "profanitiy-filter-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/jvanbrunt/profanitiy-filter-swift";
 			requirement = {
 				kind = exactVersion;
 				version = 0.0.2;
-			};
-		};
-		08B3F1332B5890ED003D2CB3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/momentohq/client-sdk-swift";
-			requirement = {
-				kind = exactVersion;
-				version = 0.5.0;
 			};
 		};
 		08B3F13A2B59B1DA003D2CB3 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
@@ -425,15 +425,15 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		083856432CF673C10090B718 /* Momento */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 083856422CF673C10090B718 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
+			productName = Momento;
+		};
 		083F34202B743B6A00489C8D /* Profanity Filter */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 083F341F2B743B6A00489C8D /* XCRemoteSwiftPackageReference "profanitiy-filter-swift" */;
 			productName = "Profanity Filter";
-		};
-		08B3F1342B5890ED003D2CB3 /* Momento */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 08B3F1332B5890ED003D2CB3 /* XCRemoteSwiftPackageReference "client-sdk-swift" */;
-			productName = Momento;
 		};
 		08B3F13B2B59B1DA003D2CB3 /* Alamofire */ = {
 			isa = XCSwiftPackageProductDependency;
