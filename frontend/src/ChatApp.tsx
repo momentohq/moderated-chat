@@ -161,7 +161,13 @@ const ChatApp = () => {
           sourceLanguage: selectedLanguage,
         });
       }
-      setChats((curr) => [...curr, message]);
+      // Previously, we were adding the just-received message directly
+      // but this caused duplicate messages to appear when switching
+      // languages very soon after. This may be due to the sequence page
+      // change, prompting the topic to send the last message(s) again.
+      // Let's just fetch the authoritative list of messages from the
+      // translation service instead.
+      fetchLatestChats();
     } catch (e) {
       console.error("unable to parse chat message", e);
     }
