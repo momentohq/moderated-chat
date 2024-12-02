@@ -10,7 +10,7 @@
     "ts:check": "tsc"
   },
   "dependencies": {
-    "@gomomento/sdk-web": "^1.101.2",
+    "@gomomento/sdk-web": "^1.102.0",
     "@react-native/metro-config": "^0.73.5",
     "@types/react": "~18.2.14",
     "base-64": "^1.0.0",
