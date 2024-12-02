@@ -295,9 +295,17 @@ fun ModeratedChatLayout(
                                     try {
                                         topicSubscribe(language = currentLanguage)
                                         {
-                                            val jsonMessage = JSONObject(it)
-                                            val parsedMessage = parseMessage(jsonMessage)
-                                            currentMessages.add(parsedMessage)
+                                            // Previously, we were adding the just-received message directly
+                                            // but this caused duplicate messages to appear when switching
+                                            // languages very soon after. This may be due to the sequence page
+                                            // change, prompting the topic to send the last message(s) again.
+                                            // Let's just fetch the authoritative list of messages from the
+                                            // translation service instead.
+                                            getMessagesForLanguage(languageCode = currentLanguage) {
+                                                for (i in 0..<it.count()) {
+                                                    currentMessages.add(it[i])
+                                                }
+                                            }
                                         }
                                     } catch (e: RuntimeException) {
                                         // TODO: getting a RuntimeException about grpc channel not
