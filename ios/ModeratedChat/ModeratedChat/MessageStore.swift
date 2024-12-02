@@ -20,23 +20,14 @@ class MessageStore: ObservableObject {
             if let nonNilSubscription = momentoClients.subscription {
                 for try await item in nonNilSubscription.stream {
                     switch item {
-                    case .itemText(let textItem):
-                        let response: ChatMessageEvent = try! JSONDecoder().decode(ChatMessageEvent.self, from: textItem.value.data(using: .utf8)!)
-                        
-                        if response.messageType == MessageType.image {
-                            if let image = await getImageMessage(message: response.message) {
-                                let imageResponse = ChatMessageEvent(
-                                    user: response.user,
-                                    messageType: response.messageType,
-                                    message: image,
-                                    sourceLanguage: response.sourceLanguage,
-                                    timestamp: response.timestamp
-                                )
-                                self.chatMessageEvents.append(imageResponse)
-                            }
-                        } else {
-                            self.chatMessageEvents.append(response)
-                        }
+                    case .itemText(_):
+                        // We used to process new events individually, but since we supported
+                        // topics sequence page, we're more likely to receive duplicate messages
+                        // when switching between languages very soon after sending new messages,
+                        // probably because the sequence page is still the same.
+                        // Let's grab the authoritative list of messages each time we subscribe and
+                        // when we get a new item instead.
+                        self.chatMessageEvents = await translationApi.getLatestChats()
                     case .itemBinary(let binaryItem):
                         let value = String(decoding: binaryItem.value, as: UTF8.self)
                         print("Subscriber unexpectedly recieved binary message: \(value)")
